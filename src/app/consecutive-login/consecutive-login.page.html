@@ -1,0 +1,68 @@
+<!-- <ion-header>
+  <ion-toolbar>
+    <ion-title>consecutive-login</ion-title>
+  </ion-toolbar>
+</ion-header> -->
+
+<ion-content padding>
+  <!-- <b style="padding: 10px;">7-Day Login Streak!</b> 
+  <div style="display: inline-flexbox;">
+    <ion-grid style="float: left;">
+      <ion-row><ion-col style="padding: 10px;"> <ion-button>Day 1: +5% GP</ion-button> </ion-col><ion-col style="padding: 10px;">Day 2: +10% GP</ion-col><ion-col style="padding: 10px;">Day 3: +25% GP</ion-col></ion-row>
+      <ion-row><ion-col style="padding: 10px;">Day 4: +45% GP</ion-col><ion-col style="padding: 10px;">Day 5: +60% GP</ion-col><ion-col style="padding: 10px;">Day 6: +80% GP</ion-col></ion-row> -->
+      <!-- <ion-row><ion-col>
+        <ion-button (click)="closePopover()" expand="block" color="danger">Ok</ion-button>
+      </ion-col></ion-row> -->
+    <!-- </ion-grid>
+    <ion-grid>
+      Day 7: +100% bonus GP
+    </ion-grid>
+  </div> -->
+  <div>
+    <ion-item>
+      <b>Claim your 7-Day Login Streak POWERUPS!</b>
+    </ion-item>
+    <ion-item [disabled]="days[1]">
+      <span>Day 1: +5% XP</span>
+      <ion-button [disabled]="days[1]" *ngIf="claimedStatus[1]" slot="end">claimed</ion-button>
+      <ion-button [disabled]="days[1]" (click)="claim(5,1,$event)" *ngIf="!claimedStatus[1]" slot="end">claim</ion-button>
+      <br>
+    </ion-item>
+    <ion-item [disabled]="days[2]">
+      <span>Day 2: +10% XP</span>
+      <ion-button [disabled]="days[2]" *ngIf="claimedStatus[2]" slot="end">claimed</ion-button>
+      <ion-button [disabled]="days[2]" (click)="claim(10,2)" *ngIf="!claimedStatus[2]" slot="end">claim</ion-button>
+      <br>
+    </ion-item>
+    <ion-item [disabled]="days[3]">
+      <span>Day 3: +25% XP</span>
+      <ion-button [disabled]="days[3]" *ngIf="claimedStatus[3]" slot="end">claimed</ion-button>
+      <ion-button [disabled]="days[3]" (click)="claim(25,3)" *ngIf="!claimedStatus[3]" slot="end">claim</ion-button>
+      <br>
+    </ion-item>
+    <ion-item [disabled]="days[4]">
+      <span>Day 4: +45% XP</span>
+      <ion-button [disabled]="days[4]" *ngIf="claimedStatus[4]" slot="end">claimed</ion-button>
+      <ion-button [disabled]="days[4]" (click)="claim(45,4)" *ngIf="!claimedStatus[4]" slot="end">claim</ion-button>
+      <br>
+    </ion-item>
+    <ion-item [disabled]="days[5]">
+      <span>Day 5: +60% XP</span>
+      <ion-button [disabled]="days[5]" *ngIf="claimedStatus[5]" slot="end">claimed</ion-button>
+      <ion-button [disabled]="days[5]" (click)="claim(60,5)" *ngIf="!claimedStatus[5]" slot="end">claim</ion-button>
+      <br>
+    </ion-item>
+    <ion-item [disabled]="days[6]">
+      <span>Day 6: +80% XP</span>
+      <ion-button [disabled]="days[6]" *ngIf="claimedStatus[6]" slot="end">claimed</ion-button>
+      <ion-button [disabled]="days[6]" (click)="claim(80,6)" *ngIf="!claimedStatus[6]" slot="end">claim</ion-button>
+      <br>
+    </ion-item>
+    <ion-item [disabled]="days[7]">
+      <span>Day 7: +100% XP</span>
+      <ion-button [disabled]="days[7]" *ngIf="claimedStatus[7]" slot="end">claimed</ion-button>
+      <ion-button [disabled]="days[7]" (click)="claim(100,7)" *ngIf="!claimedStatus[7]" slot="end">claim</ion-button>
+    </ion-item>
+    <ion-button (click)="closePopover()" style="padding: 2px;" expand='block' color='danger'>i'm Feel'n stronger now!</ion-button>
+  </div>
+</ion-content>

@@ -1,0 +1,8 @@
+:host ::ng-deep .weekview-normal-event-container {
+  position: relative;
+}
+
+:host ::ng-deep .dayview-normal-event-container {
+  position: relative;
+}
+/*# sourceMappingURL=add-task.page.css.map */

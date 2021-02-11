@@ -1,0 +1,9 @@
+{
+    "version": 3,
+    "mappings": "AAAA,AAAA,WAAW,CAAA;EAEP,sBAAsB,CAAA,KAAC;CACxB;;AACD,AAAA,WAAW,CAAC;EAEV,sBAAsB,CAAA,KAAC;CACxB;;AACD,AAAA,QAAQ,CAAC,QAAQ,CAAC,SAAS,CAAC,SAAS,CAAC,QAAQ,CAAC,OAAO,CAAC,OAAO,CAAA;EAC5D,sBAAsB,CAAA,KAAC;CACxB;;AACD,AAAA,IAAI,CAAA;EACF,sBAAsB,CAAA,KAAC;CACxB",
+    "sources": [
+        "auth.page.scss"
+    ],
+    "names": [],
+    "file": "auth.page.css"
+}

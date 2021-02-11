@@ -1,0 +1,70 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="m1"></ion-menu-button>
+    </ion-buttons>
+    <ion-title slot="end">Settings</ion-title>
+    <ion-buttons slot="primary">
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+<br><br>
+<div id="container" class="ion-padding">
+  <div>
+    <!-- <button (click)="ssub()">sssub</button> -->
+    <div>
+      <b>UPDATE USERNAME:</b>
+      <br>
+      <ion-item>
+        <ion-input type="text" placeholder="Username" [(ngModel)]="uname"></ion-input>
+      </ion-item>
+      <ion-button (click)="updateUname()" class="btn btn-success btn-block float-right">Update</ion-button>
+    </div>
+    <br>
+    <div>
+      <div>
+        <b>UPDATE PASSWORD</b>
+        <br><br>
+      </div>
+      Enter old password:
+      <br>
+      <ion-item>
+        <ion-input type="password" placeholder="Old password" [(ngModel)]="oldpwd"></ion-input>
+      </ion-item>
+      <br>
+      Enter new password:
+      <br>
+      <ion-item>
+        <ion-input type="password" placeholder="New password" [(ngModel)]="pwd1"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input type="password" placeholder="Re-type new password" [(ngModel)]="pwd2"></ion-input>
+      </ion-item>
+      <ion-button (click)="updatePassword()" class="btn btn-success btn-block float-right">Update</ion-button>
+    </div>
+    <br><br>
+    <form [formGroup]="formTemplate" (submit)="onSubmit(formTemplate.value)">
+      <!-- <div class="text-center">
+        <img [src]="imgSrc" width="350px" height="250px" (click)="fileUploader.click()">
+      </div> -->
+      <div class="form-group">
+        <label><b>UPDATE PROFILE PHOTO:</b></label>
+        <br><br>
+        <ion-input type="file" accept="image/*" class="form-control" #fileUploader formControlName="imageUrl"
+          (change)="showPreview($event)"></ion-input>
+        <div class="text-danger" *ngIf="isSubmitted && formControls.imageUrl.errors?.required">
+          This field is required.
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group col-md-6">
+          <br><br>
+          <ion-button type="submit" class="btn btn-success btn-block float-right">Submit</ion-button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+</ion-content>

@@ -1,0 +1,74 @@
+.photo {
+    position: relative;
+    width: 120px;
+    height: 120px;
+  }
+  .adjust {
+    position: relative;
+    align-content:space-around;
+  }
+  .border {
+    position: relative;
+    width: 140px;
+    top: -140px;
+    height: 150px;
+  }
+  
+  .wmsg {
+    position: relative;
+    top: -140px;
+  }
+  
+  .board {
+    position: relative;
+    top: -140px;
+  }
+  
+  .txt-right {
+    text-align: right;
+  }
+  #container {
+    text-align: center;
+    position: relative;
+    // left: 0;
+    // right: 0
+    // top: 50%;
+    // transform: translateY(-50%);
+    color: black;
+  }
+  
+  #container strong {
+    font-size: 20px;
+    line-height: 26px;
+  }
+  
+  #container p {
+    font-size: 16px;
+    line-height: 22px;
+  
+    color: #8c8c8c;
+  
+    margin: 0;
+  }
+  
+  #container a {
+    text-decoration: none;
+  }
+  
+  ion-content ion-toolbar {
+    --background: translucent;
+  }
+  ion-content{
+  
+    --ion-background-color:rgb(255, 255, 255);
+  }
+  ion-toolbar {
+  
+    --ion-background-color:white;
+  }
+  
+  .fake-skeleton{
+    width: 60%;
+    margin-bottom: 50px;
+  }
+  

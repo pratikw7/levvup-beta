@@ -1,0 +1,57 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="m1"></ion-menu-button>
+    </ion-buttons>
+    <ion-title slot="end">All tasks</ion-title>
+    <ion-buttons slot="primary">
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content  [fullscreen]="true" >
+  <div *ngIf="myemail != 'empty'">
+  <div id="container" class="ion-padding">
+    <ion-item lines="none">
+    </ion-item>
+    <ion-list>
+      <ng-container *ngIf="!tasks || tasks.length == 0">
+        <div *ngFor="let n of [0,1,2]" padding>
+          <p>
+            <ion-skeleton-text></ion-skeleton-text>
+          </p>
+          <p>
+            <ion-skeleton-text class="fake-skeleton"></ion-skeleton-text>
+          </p>
+        </div>
+      </ng-container>
+      <div class="adjust">
+        <div>
+          <img class="photo" [src]="photoURL" alt=""> 
+        </div>
+        <div>
+          <img class="border" [src]="borderURL" alt=""> 
+        </div>
+      </div>
+      <div class="c">
+      <h3>History of <b *ngIf="myemail">{{myemail}}</b></h3>
+      <ion-item routerLinkActive="router-link-active" *ngFor="let task of tasks">
+          <ion-label>
+            {{task.title}} 
+            <p>Created at: {{task.createdAt | date:'short'}}</p>
+            <p *ngIf="task.displayStartTime">Started at: {{task.displayStartTime | date:'short'}}</p>
+            <p *ngIf="task.displayLastUpdatedOn">Last updated on: {{task.displayLastUpdatedOn | date:'short'}}</p>
+          </ion-label>
+          <ion-checkbox disabled='true' [(ngModel)]="task.completed" ></ion-checkbox>
+    </ion-item>
+    </div>
+    </ion-list>
+
+  <!--
+  <ion-button vertical="bottom" horizontal="end" slot="fixed" (click)="save()" *ngIf="myemail">
+    Save
+  </ion-button>
+  -->
+</div>
+</div>
+</ion-content>

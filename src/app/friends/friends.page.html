@@ -1,0 +1,121 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button [disabled]='isDisabled' menu="m1"></ion-menu-button>
+    </ion-buttons>
+    <ion-title slot="end">Friends page</ion-title>
+    <ion-buttons slot="primary">
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content  [fullscreen]="true" >
+
+  <div id="container" class="ion-padding">
+    <div>
+      <h3>Friend requests:</h3>
+      <ng-container *ngIf="!frequests || frequests.length == 0">
+        <div padding>
+          None
+        </div>
+      </ng-container>
+      <ion-item  routerLinkActive="router-link-active" *ngFor="let frequest of frequests" >
+        <ion-label>
+          {{frequest}}
+        </ion-label>
+        <ion-button slot="end" (click)="addFriend(frequest)">Add friend</ion-button>
+        <ion-button slot="end" (click)="deleteFriendRequest(frequest)">Delete request</ion-button>
+      </ion-item>
+    </div>
+    <br><br>
+    <h3>Send friend request / Remove friend:</h3>
+
+    <!---->
+    <ion-searchbar autocomplete="on" placeholder="Enter friend's email"  [(ngModel)]="friendEmail" (ionChange)="_ionChange($event)" debounce="500"></ion-searchbar>
+    <ion-list>
+      <ion-item *ngFor="let email of searchedItem2">
+        <ion-label class="pointer" (click)=setEmail(email)>{{email}}</ion-label>
+      </ion-item>
+    </ion-list>
+    <!---->
+    <div class="tooltip">
+      <span class="tooltiptext" [style.visibility]="isVisibleFriend? 'visible' : 'hidden'">First click here!</span>
+    </div>
+
+    <!-- <ion-item>
+      <ion-input required type="text" placeholder="Enter email to search" [(ngModel)]="friendEmail"></ion-input>
+    </ion-item> -->
+    <ion-button (click)="sendFriendRequest()">Send request</ion-button>
+    <div class="tooltip2">
+      <span class="tooltiptext" [style.visibility]="isVisibleFriend? 'visible' : 'hidden'">Then send request!</span>
+    </div>
+    <ion-button [disabled]='isDisabled' (click)="delFriend()"> <ion-label slot="end">Remove friend</ion-label></ion-button>
+    <br><br>
+    <br><br>
+    <h3>Friends list:</h3>
+    <ion-list>
+      <ng-container *ngIf="!tasks || tasks.length == 0">
+        <div *ngFor="let n of [0,1,2]" padding>
+          <p>
+            <ion-skeleton-text></ion-skeleton-text>
+          </p>
+          <p>
+            <ion-skeleton-text class="fake-skeleton"></ion-skeleton-text>
+          </p>
+        </div>
+      </ng-container>
+
+      <ion-item  routerLinkActive="router-link-active" *ngFor="let task of tasks">
+        <ion-label class="pointer" *ngIf="task.uname" (click)="openFriendProfile(task.email)">
+          <br><br>
+          <b>{{task.uname}}</b> 
+        </ion-label>
+        <ion-label *ngIf="task.currLevel">
+          <div style="position: relative; display: flex;">
+              <div>
+                <img class="photo" src='{{task.photo}}' alt=""> 
+              </div>
+              <div>
+                <img class="border" src="{{task.border}}" alt="">
+              </div>
+            <div>
+              <p><b>Level: {{task.currLevel}}</b></p>
+              <p><b>XP: {{task.xp}}</b></p>
+            </div>
+          </div>
+        </ion-label>
+        <ion-label *ngIf="!task.uname">
+          {{task.title}}
+          <p *ngIf="task.isStreaky"><b>Streak: {{task.streak}}
+            <span *ngIf="task.streak==1">😊</span>
+            <span *ngIf="task.streak==2">😃</span>
+            <span *ngIf="task.streak==3">😁</span>
+            <span *ngIf="task.streak==4">😎</span>
+            <span *ngIf="task.streak==5">🤩</span>
+            <span *ngIf="task.streak==6">⚡</span>
+            <span *ngIf="task.streak==7">🔥</span>
+            <span *ngIf="task.streak==8">🔥🔥</span>
+            <span *ngIf="task.streak>=9">🔥🔥🔥</span>
+          </b></p>
+          <p *ngIf="task.longestStreak"><b>Longest streak: {{task.longestStreak}}
+            <span *ngIf="task.streak==1">😊</span>
+            <span *ngIf="task.streak==2">😃</span>
+            <span *ngIf="task.streak==3">😁</span>
+            <span *ngIf="task.streak==4">😎</span>
+            <span *ngIf="task.streak==5">🤩</span>
+            <span *ngIf="task.streak==6">⚡</span>
+            <span *ngIf="task.streak==7">🔥</span>
+            <span *ngIf="task.streak==8">🔥🔥</span>
+            <span *ngIf="task.streak>=9">🔥🔥🔥</span>
+          </b></p>
+          <p *ngIf="task.createdAt">Created on: {{task.createdAt | date:'short'}}</p>
+          <p *ngIf="task.displayStartTime">Started at: {{task.displayStartTime | date:'short'}}</p>
+          <p *ngIf="task.isStreaky">Last updated on: {{task.displayLastUpdatedOn | date:'short'}}</p>
+          
+        </ion-label>
+        <ion-checkbox *ngIf="!task.uname && !task.currLevel" disabled="true" [(ngModel)]="task.completed"></ion-checkbox>
+      </ion-item>
+    </ion-list>
+
+</div>
+</ion-content>

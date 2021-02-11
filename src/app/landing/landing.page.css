@@ -1,0 +1,105 @@
+.logo {
+  position: relative;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  height: 70px;
+  width: auto;
+}
+
+.myHeader {
+  width: 100%;
+  -webkit-box-shadow: 0px 3px 1px red;
+          box-shadow: 0px 3px 1px red;
+}
+
+.bg {
+  min-height: 100%;
+  background-color: black;
+  background-size: cover;
+  background-position: center center;
+  overflow: auto;
+}
+
+.levvup {
+  color: #ff3d77;
+  font-family: 'Source Sans Pro', sans-serif;
+  text-align: center;
+  font-size: 30px;
+  text-shadow: 2px 2px 5px #000000;
+}
+
+.headline {
+  font-family: 'Source Sans Pro', sans-serif;
+  text-align: center;
+  font-size: 30px;
+  color: white;
+  text-shadow: 2px 2px 5px #000000;
+}
+
+span {
+  font-size: medium;
+  color: white;
+  text-align: center;
+}
+
+.reg {
+  position: relative;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%);
+}
+
+ul {
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  color: white;
+  margin-left: 30%;
+}
+
+ul li {
+  color: #ff3d77;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: normal;
+}
+
+p {
+  font-size: larger;
+  text-align: center;
+  color: white;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.photo {
+  position: relative;
+  margin-right: auto;
+  margin-left: -500px;
+  height: 500px;
+  width: 500px;
+}
+
+.main-div {
+  margin: auto;
+}
+
+.endLine {
+  margin-top: 40px;
+  font-weight: bold;
+}
+
+.myList {
+  margin-left: 30%;
+  text-align: left;
+}
+
+@media screen and (max-width: 768px) {
+  .myList {
+    margin-left: 15%;
+  }
+  ul {
+    margin-left: 15%;
+  }
+}
+/*# sourceMappingURL=landing.page.css.map */

@@ -1,0 +1,53 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title slot="end">Tutorial</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-slides #slides [options]="slideOpts" (ionSlideDidChange)="slideChanged($event)" pager="true">
+    <ion-slide>
+        <!-- <img src="http://placehold.it/120x120" /> -->
+        <h3>Welcome!</h3>
+        <p>LEVVUP is productivity app which you can use to level up in
+          real life alongside your friends!
+        </p>
+        <ion-item lines="none">
+          <ion-button style="margin-right: 100px;" (click)="prev()"><ion-icon name="chevron-back-outline"></ion-icon>
+          </ion-button>
+          <ion-button (click)="next()"><ion-icon name="chevron-forward-outline"></ion-icon></ion-button>
+        </ion-item>
+    </ion-slide>
+    <ion-slide>
+        <!-- <img src="http://placehold.it/120x120" /> -->
+        <h3>Why should I use LEVVUP?</h3>
+        <p>Becoming a better version of yourself needn't be so hard! 
+          You deserve to feel happy and satisfied for every bit of your hardwork.
+        </p>
+        <p>
+          We help you track your streaks, tasks and reward you for your self development.
+        </p>
+        <ion-item lines="none">
+          <ion-button style="margin-right: 100px;" (click)="prev()"><ion-icon name="chevron-back-outline"></ion-icon>
+          </ion-button>
+          <ion-button (click)="next()"><ion-icon name="chevron-forward-outline"></ion-icon></ion-button>
+        </ion-item>
+    </ion-slide>
+    <ion-slide>
+        <!-- <img src="http://placehold.it/120x120" /> -->
+        <h3>Create your own mastermind group!</h3>
+        <p>No matter how strong a seed is, if its in a bad soil then 
+          the plant won't grow much.
+        </p>
+        <p>Add the friends you need and 
+          share your progress to keep each other motivated!
+        </p>
+        <ion-item lines="none">
+          <ion-button style="margin-right: 100px;" (click)="prev()"><ion-icon name="chevron-back-outline"></ion-icon>
+          </ion-button>
+          <ion-button (click)="next()"><ion-icon name="chevron-forward-outline"></ion-icon></ion-button>
+        </ion-item>
+        <ion-button (click)="goToHome()">Let's get started!🔥</ion-button>
+    </ion-slide>
+  </ion-slides>
+</ion-content>

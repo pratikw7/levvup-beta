@@ -1,0 +1,43 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="m1"></ion-menu-button>
+    </ion-buttons>
+    <ion-title slot="start">Notifications</ion-title>
+    <ion-icon (click)="showNotif()" class="cursorPointer" slot="end" name="notifications"></ion-icon>
+      <ion-badge slot="end" color="warning">{{userNotifsCount}}</ion-badge>
+    <ion-buttons slot="primary">
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list style="background-color: silver;">
+    <ion-list-header>
+      <ion-label><h2><b>All Notifications</b></h2></ion-label>
+    </ion-list-header>
+
+    <ion-item *ngFor="let notif of userNotifs">
+      <ion-avatar slot="start">
+        <img [src]="notif.senderDp">
+      </ion-avatar>
+      <ion-label>
+        <h2><span *ngIf="!notif.read"> <ion-badge color="danger">!</ion-badge></span>{{notif.sender}}</h2>
+        <p>has completed {{notif.title}}</p>
+      </ion-label>
+      <ion-button *ngIf="!notif.read" (click)="notifRead(notif)" slot="end">Seen<ion-icon name="checkmark-outline"></ion-icon></ion-button>
+      <ion-button (click)="removeNotif(notif)" slot="end">Delete<ion-icon name="close"></ion-icon></ion-button>
+    </ion-item>
+    <!-- <ion-item *ngFor="let notif of userNotifs">
+      <ion-avatar slot="start">
+        <img [src]="notif.senderDp">
+      </ion-avatar>
+      <ion-label>
+        <h2>{{notif.sender}}</h2>
+        <h3>I'm a big deal</h3>
+        <p>Listen, I've had a pretty messed up day...</p>
+      </ion-label>
+    </ion-item> -->
+
+  </ion-list>
+</ion-content>

@@ -1,0 +1,259 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button  [disabled]="isVisible" menu="m1"></ion-menu-button>
+    </ion-buttons>
+    <ion-title slot="start">Dashboard</ion-title>
+    <ion-icon [hidden]="notif" (click)="showNotifs()" class="cursorPointer" slot="end" name="notifications"></ion-icon>
+    <ion-icon [hidden]="!notif" (click)="showNotifs()" class="cursorPointer" slot="end" name="notifications-outline"></ion-icon>
+    <ion-badge class="margin-right" slot="end" color="warning">{{userNotifsCount}}</ion-badge>
+    <ion-buttons slot="primary">
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content style="z-index: 999999;" [hidden]="notif" class="notifDimensions">
+  <ion-list style="background-color: silver;">
+    <ion-list-header>
+      <ion-label>Recent Notifications</ion-label>
+      <ion-label class="cursorPointer" routerLink="/notifications"><b> View all </b></ion-label>
+    </ion-list-header>
+
+    <ion-item-sliding *ngFor="let notif of userNotifs">
+      <ion-item>
+        <ion-item-options slot="start" side="start" (ionSwipe)="removeNotif(notif)">
+          <ion-item-option  expandable>
+            <ion-icon name="close"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+        <ion-avatar>
+          <img [src]="notif.senderDp">
+        </ion-avatar>
+        <ion-label>
+          <h2> 
+            <span *ngIf="!notif.read"> <ion-badge color="danger">!</ion-badge></span>
+            &nbsp;&nbsp;{{notif.sender}}
+          </h2>
+          <!-- <p>&nbsp;&nbsp;{{notif.title}} is completed.</p> -->
+          <p>&nbsp;&nbsp;{{notif.title}}</p>
+        </ion-label>
+        <ion-item-options *ngIf="!notif.read" side="end" (ionSwipe)="notifRead(notif)">
+          <ion-item-option color="warning"  expandable>
+            seen
+          </ion-item-option>
+        </ion-item-options>
+        <ion-item-options *ngIf="notif.read" side="end" (ionSwipe)="notifUnread(notif)">
+          <ion-item-option color="warning"  expandable>
+            unread
+          </ion-item-option>
+        </ion-item-options>
+        
+      </ion-item>
+    </ion-item-sliding>
+    <!-- <ion-item-sliding *ngFor="let notif of userNotifs">
+      <ion-item>
+        <ion-avatar slot="start">
+          <img [src]="notif.senderDp">
+        </ion-avatar>
+        <ion-label>
+          <h2>{{notif.sender}}</h2>
+          <p>has completed {{notif.title}}</p>
+        </ion-label>
+        <ion-item-options side="end" (ionSwipe)="removeNotif(notif)">
+          <ion-item-option  expandable>
+            <ion-icon class="cursorPointer" (click)="removeNotif(notif)" name="close"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+      </ion-item>
+    </ion-item-sliding> -->
+    <!-- <ion-item *ngFor="let notif of userNotifs">
+      <ion-avatar slot="start">
+        <img [src]="notif.senderDp">
+      </ion-avatar>
+      <ion-label>
+        <h2>{{notif.sender}}</h2>
+        <h3>I'm a big deal</h3>
+        <p>Listen, I've had a pretty messed up day...</p>
+      </ion-label>
+    </ion-item> -->
+
+  </ion-list>
+</ion-content>
+
+<ion-content (click)="dontShowNotifs()" fullscreen="true">
+  <div *ngIf="myemail != 'empty'">
+  <div id="container" class="ion-padding">
+    <div class="adjust">
+      <div class="adjust">
+        <div>
+          <img class="photo" [src]="photoURL" alt=""> 
+        </div>
+        <div>
+          <img class="border" [src]="borderURL" alt="">
+        </div>
+      </div>
+      <div class="wmsg">
+            <h3>Welcome! <b *ngIf="myemail">{{username}}</b>
+            </h3>
+        <p>To know how this app works <a routerLink='/help'>Click here!</a></p>
+        <p>XP = Experience | GP = Grit points</p>
+        <p *ngIf="canUpdateTenacity">Complete atleast one task today to increase your TENACITY!</p>
+        <p *ngIf="boost > 1">Active boosts: {{boost}}% bonus XP per task!</p>
+      </div>
+    </div>
+    <br><br><br>
+    <div class="board">
+    <ion-item lines="none">
+      <ion-label slot="start" *ngIf="myemail">
+        <b>Level {{currLevel}}</b>
+      </ion-label>
+      <ion-label style="text-align: center;" slot="start" *ngIf="myemail">
+        <b>XP: {{xp}} | GP: {{gp}}</b>
+      </ion-label>
+      <ion-label class="txt-right"  *ngIf="myemail">
+        <b>Level {{nextLevel}}</b>
+      </ion-label>
+    </ion-item>
+
+    <!-- <ion-progress-bar [value]="prg3"></ion-progress-bar>
+    <b>LEVVUP in: {{prg4}}%</b> -->
+    <ion-progress-bar color="secondary" [value]="prgLvl"></ion-progress-bar>
+    <b>LEVVUP progress: {{prgLvl2 | number:'1.0-2'}}%</b>
+    <br><br>
+    <ion-progress-bar [value]="prg"></ion-progress-bar>
+    <b>Task Progress: {{prg2 | number:'1.0-2'}}%</b>
+    <!-- <div class="progress">
+    <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:{{prg2}}">
+        <b>Progress: {{prg2}}%</b>
+    </div>
+    </div> -->
+    <ion-list>
+      <!-- <ion-item *ngFor="let task of tasks">
+        <ion-label>{{task.name}}</ion-label>
+        <ion-checkbox slot="end" [(ngModel)]="task.isChecked"></ion-checkbox>
+      </ion-item> -->
+      <ng-container *ngIf="!tasksTemp || tasksTemp.length == 0">
+        <div *ngFor="let n of [0,1,2]" padding>
+          <p>
+            <ion-skeleton-text></ion-skeleton-text>
+          </p>
+          <p>
+            <ion-skeleton-text class="fake-skeleton"></ion-skeleton-text>
+          </p>
+        </div>
+      </ng-container>
+      <ng-container *ngIf="!tasks || tasks.length == 0">
+        <div padding>
+          <p>
+            Looks like you haven't yet added your tasks of the day!<br>
+            Click the + icon below to add them :)
+          </p>
+        </div>
+      </ng-container>
+      
+      <ion-item routerLinkActive="router-link-active" *ngFor="let task of tasks">
+          <ion-label>
+            {{task.title}} <span *ngIf="task.taskType !== 'other' && task.taskType !== undefined">[{{task.taskType}}]</span>
+          <p *ngIf="task.isStreaky"><b> 
+            <span *ngIf="task.streak <= 9">Streak: {{task.streak}} </span>
+            <ion-badge *ngIf="task.streak >= 10" class="streakPos" color="success">Streak: {{task.streak}}</ion-badge>
+            <span *ngIf="task.streak==1">😊</span>
+            <span *ngIf="task.streak==2">😃</span>
+            <span *ngIf="task.streak==3">😁</span>
+            <span *ngIf="task.streak==4">😎</span>
+            <span *ngIf="task.streak==5">🤩</span>
+            <span *ngIf="task.streak==6">⚡</span>
+            <span *ngIf="task.streak==7">🔥</span>
+            <span *ngIf="task.streak==8">🔥🔥</span>
+            <span *ngIf="task.streak>=9">🔥🔥🔥</span>
+          </b></p>
+          <p *ngIf="task.longestStreak"><b>Longest streak: {{task.longestStreak}}
+            <span *ngIf="task.longestStreak==1">😊</span>
+            <span *ngIf="task.longestStreak==2">😃</span>
+            <span *ngIf="task.longestStreak==3">😁</span>
+            <span *ngIf="task.longestStreak==4">😎</span>
+            <span *ngIf="task.longestStreak==5">🤩</span>
+            <span *ngIf="task.longestStreak==6">⚡</span>
+            <span *ngIf="task.longestStreak==7">🔥</span>
+            <span *ngIf="task.longestStreak==8">🔥🔥</span>
+            <span *ngIf="task.longestStreak>=9">🔥🔥🔥</span>
+          </b></p>
+          <p>Created on: {{task.createdAt | date:'short'}}</p>
+          <p *ngIf="task.displayStartTime">Started at: {{task.displayStartTime | date:'short'}}</p>
+          <p *ngIf="task.isStreaky">Last updated on: {{task.displayLastUpdatedOn | date:'short'}}</p>
+          <div horizontal="end" slot="fixed" class="tooltip2">
+            <span class="tooltiptext" [style.visibility]="isVisibleTask? 'visible' : 'hidden'">Mark as done!</span>
+          </div>
+        </ion-label>
+          <ion-checkbox [disabled]="dayOff || isVisible" [(ngModel)]="task.completed" ></ion-checkbox>
+          <!-- <ion-checkbox [(ngModel)]="task.completed" (click)="saveTask()" ></ion-checkbox> -->
+          <ion-button [disabled]="dayOff || isVisible" (click)="remove(task)" slot="end">
+            Delete
+            <ion-icon name="close"></ion-icon>
+          </ion-button>
+      </ion-item>
+    </ion-list>
+    <br><br><br><br>
+    
+    <ion-fab vertical="bottom" horizontal="start" slot="fixed">
+      <div class="tooltip">
+        <span class="tooltiptext" [style.visibility]="isVisible? 'visible' : 'hidden'">Click here!</span>
+      </div>
+    </ion-fab>
+    <ion-fab vertical="bottom" horizontal="start" slot="fixed">
+      <ion-fab-button (click)="setVisibilityFalse()"  [disabled]="dayOff" routerLink="/add-task" routerDirection="forward">
+        <ion-icon name="add"></ion-icon>
+      </ion-fab-button>
+    </ion-fab>
+    <!--pointer-events: none-->
+    
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <div class="tooltipRight">
+        <span class="tooltiptext" [style.visibility]="isVisibleTask? 'visible' : 'hidden'">Then hit save!</span>
+      </div>
+    </ion-fab>
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab-button [disabled]="dayOff || isVisible" (click)="updateTask()" *ngIf="myemail">
+        <ion-icon name="save-outline"></ion-icon>
+      </ion-fab-button>
+    </ion-fab>
+
+    <!-- 
+      a btn to send notifs to all and a checkbox showing if 
+      notifs were sent to all for that day. btn should be visible to
+      me n lokesh only. fn  = sendDailyNotifs
+    -->
+
+    <ion-fab vertical="bottom" slot="fixed">
+      <ion-fab-button [disabled]="dayOff || isVisible" (click)="sendDailyNotifs()" *ngIf=" myemail == 'pratikw7@gmail.com' ">
+        <ion-icon name="send-outline"></ion-icon>
+      </ion-fab-button>
+    </ion-fab>
+
+    
+
+  <!-- <ion-item lines="none">
+    <ion-button (click)="updateTask()" slot="end" *ngIf="myemail">
+      Save
+    </ion-button>
+  </ion-item> -->
+  <!--
+  <ion-button vertical="bottom" horizontal="end" slot="fixed" (click)="save()" *ngIf="myemail">
+    Save
+  </ion-button>
+  -->
+</div>
+<ion-button [disabled]="isVisible" (click)="toggleDayoff()">
+  <div [hidden]="dayOff">
+    I want to take a day off
+  </div>
+  <div [hidden]="!dayOff">
+    I'm getting back into the game!
+  </div>
+</ion-button>
+
+</div>
+
+</div>
+
+</ion-content>

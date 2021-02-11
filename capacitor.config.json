@@ -1,0 +1,9 @@
+{
+  "appId": "com.gamify.app",
+  "appName": "gamify",
+  "bundledWebRuntime": false,
+  "npmClient": "npm",
+  "webDir": "www",
+  "cordova": {},
+  "windowsAndroidStudioPath": "C:\\Program Files\\Android\\Android Studio\\bin\\studio64.exe"
+}

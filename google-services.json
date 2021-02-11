@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "119187978168",
+    "firebase_url": "https://ionic-gamify.firebaseio.com",
+    "project_id": "ionic-gamify",
+    "storage_bucket": "ionic-gamify.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:119187978168:android:ede4a8f5f78bfa7c5a414d",
+        "android_client_info": {
+          "package_name": "com.gamify.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "119187978168-bpe2b2dhi8klpk4o1efaht0edmifiv65.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAk4_5QFrSDTghjyuLtQ4rL7NRQ4XDGHVs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "119187978168-bpe2b2dhi8klpk4o1efaht0edmifiv65.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

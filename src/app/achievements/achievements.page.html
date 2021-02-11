@@ -1,0 +1,78 @@
+<ion-header>
+  <ion-toolbar>
+    <!-- <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons> -->
+    <ion-buttons slot="start">
+      <ion-menu-button menu="m1"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Achievements</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<!--
+      style="--percentage : [tenacity]; --fill: #FF3D00 ;"
+-->
+<ion-content class="ion-padding">
+  <h5>
+    Click each <span>CORE HABIT</span> to refresh them.
+    Core habits are habits which are essential to make progress in life. <br>
+  </h5>
+    They ensure the following: <br>
+    <ion-badge color="danger">
+      You keep completing small milestones everyday (Tenacity).
+    </ion-badge><br>
+    <ion-badge style="background-color: #039BE5 ;">
+      Your body is fit enough to have plenty of energy to complete your daily milestones (Fitness). <br> 
+    </ion-badge><br>
+    <ion-badge style="background-color: green ;">
+      Your mind is focused thereby enabling you to be efficient and not get distracted (Mindfulness). <br> 
+    </ion-badge><br>
+    <ion-badge style="background-color: orange ;">
+      You have a clear roadmap of where you are heading towards, this will help you stay on track (Journaling) <br>
+    </ion-badge><br>
+
+  <div>
+    <b>Tenacity:</b> Increases by 10 (out of 100) once everyday if any task is completed on that day.<br>
+    <b>Fitness:</b> Increases by 10 (out of 100) for every task which was described as 'fitness related'. <br>
+    <b>Mindfulness:</b> Increases by 10 (out of 100) for every task which was described as 'meditation related'. <br>
+    <b>Journaling:</b> Increases by 10 (out of 100) for a day if task described as 'journaling related' is completed.<br>
+  </div>
+  <div class="flex-container">
+    <div (click)="tenacityF($event)" class="semi-donut-model-2 margin flex-child cursorPointer"
+        style="--percentage : 0; --fill: #FF3D00  ;">
+      TENACITY LVL {{tenacityLvl}}
+    </div>
+
+    <div (click)="fitnessF($event)" class="semi-donut-model-2 margin flex-child cursorPointer"
+        style="--percentage : 0; --fill: #039BE5 ;">
+      FITNESS LVL {{fitnessLvl}}
+    </div>
+  </div>
+
+  <div class="flex-container">
+    <div (click)="mindfulnessF($event)"  class="semi-donut-model-2 margin flex-child cursorPointer" 
+       style="--percentage : 0; --fill: green ;">
+      MINDFULNESS LVL {{mindfulnessLvl}}
+    </div>
+
+    <div (click)="journalingF($event)"  class="semi-donut-model-2 margin flex-child cursorPointer"
+        style="--percentage : 0; --fill: orange ;">
+      JOURNALING LVL {{journalingLvl}}
+    </div>
+  </div>
+  
+
+  <!-- <div class="multi-graph margin">
+    JavaScript
+    <div class="graph" data-name="jQuery" 
+        style="--percentage : 80; --fill: #0669AD ;">
+    </div>
+    <div class="graph" data-name="Angular" 
+        style="--percentage : 60; --fill: #E62A39 ;">
+    </div>
+    <div class="graph" data-name="React" 
+        style="--percentage : 30; --fill: #FEDA3E ;">
+    </div>
+  </div> -->
+</ion-content>

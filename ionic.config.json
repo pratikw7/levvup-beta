@@ -1,0 +1,8 @@
+{
+  "name": "gamify",
+  "integrations": {
+    "capacitor": {},
+    "cordova": {}
+  },
+  "type": "angular"
+}
