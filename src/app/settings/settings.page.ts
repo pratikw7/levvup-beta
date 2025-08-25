@@ -33,6 +33,7 @@ export class SettingsPage implements OnInit {
   boost: number;
   xpBonus: number;
   form: FormGroup;
+  uname: string;
 
   constructor(private alertCtrl: AlertController,
               private loadingCtrl: LoadingController,
@@ -134,6 +135,20 @@ export class SettingsPage implements OnInit {
       } finally {
         await loading.dismiss();
       }
+    }
+  }
+
+  async updateUname() {
+    if (this.uname && this.uname.trim()) {
+      try {
+        await this.allService.updateMetaData({username: this.uname});
+        await this.allService.updateUname({uname: this.uname});
+        this.showAlert('Success', 'Username changed successfully!', 'OK');
+      } catch (error) {
+        this.showAlert('Error', 'Failed to update username.', 'OK');
+      }
+    } else {
+      this.showAlert('Error', 'Please enter a valid username.', 'OK');
     }
   }
 

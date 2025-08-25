@@ -293,7 +293,9 @@ export class AllService {
       }).then(() => {
         const friendAcceptNotif = httpsCallable(getFunctions(), 'friendAcceptNotif');
         friendAcceptNotif({email: receiversEmail, fireObj: this.dbObj}).then(result => {
-          console.log(result.data());
+          if (result && result.data) {
+            console.log(result.data);
+          }
         });
       });
     });

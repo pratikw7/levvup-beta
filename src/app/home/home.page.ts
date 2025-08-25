@@ -312,9 +312,11 @@ export class HomePage implements OnInit {
             }
           });
         // });
-        this.fcm.getPermission().subscribe((r => {
+        this.fcm.getPermission().then((r) => {
           console.log('r: ' + r);
-        }));
+        }).catch(error => {
+          console.error('Error getting FCM permission:', error);
+        });
         setTimeout(() => {
         let cl = 1;
         let reqXP = 0;

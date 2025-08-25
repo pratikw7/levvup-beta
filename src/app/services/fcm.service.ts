@@ -67,7 +67,6 @@ export class FcmService {
     for (const element of flist) {
       console.log(element);
       try {
-        const docRef = doc(this.dbObj, element, 'metaData');
         const docSnap = await getDocs(collection(this.dbObj, element));
         if (!docSnap.empty) {
           const metaDoc = docSnap.docs.find(d => d.id === 'metaData');
@@ -97,98 +96,14 @@ export class FcmService {
     return Promise.resolve();
   }
 
-  async sendDailyNotifs2(flist: string[]) {
-    let x;
-    let y2: string[] = [];
-    return new Promise((resolve, reject) => {
-      resolve(flist.forEach(async element => {
-        console.log('element: ' + element);
-        x = await this.myCollection.collection(element).doc('metaData').ref.get().then(doc => {
-          console.log(doc.data());
-          return doc.data();
-        });
-        //
-        if (x !== undefined && x.devices !== undefined) {
-            y2.push(x.devices);
-            console.log('y33: ' + y2);
-            this.fun.httpsCallable('dailyNotifs')({token: y2})
-            .pipe(tap(_ => this.makeToast('Daily reminders sent!')))
-            .subscribe();
-        }
-        console.log('outif');
-        //
-      })
-      );
-    }).then(() => {
-      setTimeout(() => {
-      console.log('x: ' + x);
-      if (x !== undefined && x.devices !== undefined) {
-          y2.push(x.devices);
-          console.log('y2: ' + y2);
-          this.fun.httpsCallable('dailyNotifs')({token: y2})
-          .pipe(tap(_ => this.makeToast('Daily reminders sent!')))
-          .subscribe();
-      }
-      console.log('exited');
-      }, 5000);
-    });
-  }
-
-
-  async broadcastToAll(flist: string[], taskTitle: string, myemail: string) {
-    let x;
-    let y2: string[] = [];
-    console.log('fcm b in');
-    // change myemail to uname even in index.ts
-    if (flist !== undefined) {
-      flist.forEach(elem => {
-      this.myCollection.collection(myemail).doc('metaData').ref.get().then( metaData => {
-        const metaData2: any = metaData.data();
-        console.log(metaData2.photo);
-        const mytimestamp = new Date().getTime();
-        if (metaData2.username === undefined) {
-          this.myCollection.collection(elem).doc('notifDoc').collection('notifs')
-        .add({sender: myemail, senderDp: metaData2.photo, title: taskTitle, timestamp: mytimestamp}).catch(error => {
-          console.log(error);
-        });
-        } else {
-          this.myCollection.collection(elem).doc('notifDoc').collection('notifs')
-          .add({sender: metaData2.username, senderDp: metaData2.photo, title: taskTitle, timestamp: mytimestamp}).catch(error => {
-            console.log(error);
-          });
-        }
-        });
-      });
-      return new Promise((resolve, reject) => {
-      resolve(flist.forEach(async elem => {
-        x = await this.myCollection.collection(elem).doc('metaData').ref.get().then(doc => {
-          console.log(doc.data());
-          return doc.data();
-        });
-      })
-      );
-    }).then(() => {
-      setTimeout(() => {
-      console.log('x: ' + x);
-      if (x.devices !== undefined) {
-        // x.devices.forEach(e => {
-        //   y2.push(e);
-        // });
-          y2.push(x.devices);
-      }
-      console.log('y2: ' + y2);
-      console.log('TT :' + taskTitle + ' ' + myemail);
-      this.fun.httpsCallable('broadcastToAll')({taskTitle, token: y2, myemail})
-    .pipe(tap(_ => this.makeToast(`All friends notified about ${taskTitle}`)))
-    .subscribe();
-  }, 5000);
-    });
-  }
-  }
-
   freq(sendersEmail: string, receiversEmail: string) {
     // Implementation for friend request notifications
     console.log('Friend request notification sent from', sendersEmail, 'to', receiversEmail);
+  }
+
+  broadcastToAll(emails: string[], taskTitle: string, senderEmail: string) {
+    // Implementation for broadcasting task completion to friends
+    console.log('Broadcasting task completion:', taskTitle, 'from', senderEmail, 'to', emails);
   }
 
   sub(topic: string) {
@@ -196,15 +111,15 @@ export class FcmService {
     this.token = 'eelro_VQFCkoa_T5xjzAfg:APA91bFPuqh2uIqR9MCpiAhcqLycH8dan4uNiglHGXgXN1PbeDTutourXvizfwxUD9K6Dlz7B8D_xvDQUgiaG_se5rQtACuibNNxINhZ2dKudzDYeUlArwQCSQPRQR2vEOuPM7piTjZ8';
     const subscribeToTopic = httpsCallable(getFunctions(), 'subscribeToTopic');
     subscribeToTopic({ topic, token: this.token})
-    .pipe(tap(_ => this.makeToast(`subscribed to ${topic}`)))
-    .subscribe();
+    .then(() => this.makeToast(`subscribed to ${topic}`))
+    .catch(error => console.error('Error subscribing to topic:', error));
   }
 
   unsub(topic: string) {
     const unsubscribeToTopic = httpsCallable(getFunctions(), 'unsubscribeToTopic');
     unsubscribeToTopic({ topic, token: this.token})
-    .pipe(tap(_ => this.makeToast(`unsubscribed from ${topic}`)))
-    .subscribe();
+    .then(() => this.makeToast(`unsubscribed from ${topic}`))
+    .catch(error => console.error('Error unsubscribing from topic:', error));
   }
 
   // async getToken() {

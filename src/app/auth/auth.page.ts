@@ -85,6 +85,40 @@ export class AuthPage implements OnInit {
     this.isLogin = !this.isLogin;
   }
 
+  async resetPassword() {
+    const alert = await this.alertCtrl.create({
+      header: 'Reset Password',
+      message: 'Enter your email address to receive a password reset link.',
+      inputs: [
+        {
+          name: 'email',
+          type: 'email',
+          placeholder: 'Email'
+        }
+      ],
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel'
+        },
+        {
+          text: 'Reset',
+          handler: async (data) => {
+            if (data.email) {
+              try {
+                await this.authService.resetPassword(data.email);
+                this.showAlert('Password reset email sent!');
+              } catch (error) {
+                this.showAlert('Failed to send reset email. Please try again.');
+              }
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
   private showAlert(message: string) {
     this.alertCtrl
       .create({

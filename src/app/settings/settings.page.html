@@ -13,7 +13,6 @@
 <br><br>
 <div id="container" class="ion-padding">
   <div>
-    <!-- <button (click)="ssub()">sssub</button> -->
     <div>
       <b>UPDATE USERNAME:</b>
       <br>
@@ -42,26 +41,22 @@
       <ion-item>
         <ion-input type="password" placeholder="Re-type new password" [(ngModel)]="pwd2"></ion-input>
       </ion-item>
-      <ion-button (click)="updatePassword()" class="btn btn-success btn-block float-right">Update</ion-button>
+      <ion-button (click)="changePassword()" class="btn btn-success btn-block float-right">Update</ion-button>
     </div>
     <br><br>
-    <form [formGroup]="formTemplate" (submit)="onSubmit(formTemplate.value)">
-      <!-- <div class="text-center">
-        <img [src]="imgSrc" width="350px" height="250px" (click)="fileUploader.click()">
-      </div> -->
+    <form [formGroup]="form" (submit)="uploadImage()">
       <div class="form-group">
         <label><b>UPDATE PROFILE PHOTO:</b></label>
         <br><br>
-        <ion-input type="file" accept="image/*" class="form-control" #fileUploader formControlName="imageUrl"
-          (change)="showPreview($event)"></ion-input>
-        <div class="text-danger" *ngIf="isSubmitted && formControls.imageUrl.errors?.required">
-          This field is required.
+        <ion-input type="text" placeholder="Enter image URL" class="form-control" formControlName="imageUrl"></ion-input>
+        <div class="text-danger" *ngIf="form.get('imageUrl')?.invalid && form.get('imageUrl')?.touched">
+          Image URL is required.
         </div>
       </div>
       <div class="form-row">
         <div class="form-group col-md-6">
           <br><br>
-          <ion-button type="submit" class="btn btn-success btn-block float-right">Submit</ion-button>
+          <ion-button type="submit" class="btn btn-success btn-block float-right" [disabled]="!form.valid">Submit</ion-button>
         </div>
       </div>
     </form>
