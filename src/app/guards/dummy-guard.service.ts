@@ -10,7 +10,11 @@ export class DummyGuardService  {
   constructor(private alertController: AlertController, private router: Router) { }
 
   canLoad() {
-    if (localStorage.getItem('userEmail') === 'empty') {
+    const userEmail = localStorage.getItem('userEmail');
+    console.log('🛡️ Guard: Checking auth, userEmail in localStorage:', userEmail);
+    
+    if (userEmail === 'empty' || userEmail === null || userEmail === undefined) {
+      console.log('🛡️ Guard: No valid user email, blocking access');
       this.alertController.create({
         header: 'Sorry!',
         subHeader: 'Please login to continue',
@@ -19,6 +23,7 @@ export class DummyGuardService  {
       this.router.navigate(['/auth']);
       return false;
     } else {
+      console.log('🛡️ Guard: Valid user email found, allowing access');
       return true;
     }
   }

@@ -1,7 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
+
+// Import Ionic v8 standalone components
+import { IonApp, IonButton, IonMenu, IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonIcon, IonLabel, IonRouterOutlet } from '@ionic/angular/standalone';
 
 import { Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
@@ -20,7 +22,21 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
   selector: 'app-root',
   templateUrl: 'app.component.html',
   standalone: true,
-  imports: [CommonModule, IonicModule]
+  imports: [
+    CommonModule,
+    IonApp,
+    IonButton,
+    IonMenu,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    IonList,
+    IonItem,
+    IonIcon,
+    IonLabel,
+    IonRouterOutlet
+  ]
 })
 export class AppComponent implements OnInit, OnDestroy {
   private authSub: Subscription;
@@ -31,11 +47,14 @@ export class AppComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private router: Router,
   ) {
+    console.log('AppComponent constructor called');
     this.initializeApp();
   }
 
   initializeApp() {
+    console.log('initializeApp called');
     this.platform.ready().then(() => {
+      console.log('Platform ready');
       if (Capacitor.isPluginAvailable('SplashScreen')) {
         SplashScreen.hide();
       }
@@ -43,9 +62,42 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    console.log('AppComponent ngOnInit called');
+    
+    // Try auto-login first
+    this.authService.autoLogin().subscribe(user => {
+      console.log('AppComponent: Auto-login result:', user ? 'success' : 'failed');
+      console.log('AppComponent: Current URL:', this.router.url);
+      
+      if (user) {
+        // User is logged in, redirect away from auth page
+        if (this.router.url.includes('/auth')) {
+          console.log('AppComponent: User logged in, redirecting to home');
+          this.router.navigateByUrl('/home');
+        }
+      } else {
+        // Only navigate to auth if not currently on auth page
+        if (!this.router.url.includes('/auth')) {
+          console.log('AppComponent: Navigating to auth page');
+          this.router.navigateByUrl('/auth');
+        }
+      }
+    });
+    
     this.authSub = this.authService.userIsAuthenticated.subscribe(isAuth => {
-      if (!isAuth && this.previousAuthState !== isAuth) {
-        this.router.navigateByUrl('/auth');
+      console.log('AppComponent: Auth state changed:', isAuth);
+      console.log('AppComponent: Current URL:', this.router.url);
+      
+      if (isAuth && this.router.url.includes('/auth')) {
+        // User just logged in and we're on auth page, redirect to home
+        console.log('AppComponent: User authenticated, redirecting to home');
+        this.router.navigateByUrl('/home');
+      } else if (!isAuth && this.previousAuthState !== isAuth) {
+        // Only navigate to auth if not currently on auth page
+        if (!this.router.url.includes('/auth')) {
+          console.log('AppComponent: User logged out, navigating to auth');
+          this.router.navigateByUrl('/auth');
+        }
       }
       this.previousAuthState = isAuth;
     });
@@ -55,7 +107,7 @@ export class AppComponent implements OnInit, OnDestroy {
       this.checkAuthOnResume.bind(this)
     );
 
-    console.log('Initializing HomePage');
+    console.log('AppComponent: Initializing push notifications');
 
     // Register with Apple / Google to receive push via APNS/FCM
     PushNotifications.register();
@@ -96,8 +148,14 @@ export class AppComponent implements OnInit, OnDestroy {
 
 
   onLogout() {
+    console.log('onLogout called');
     this.authService.logout();
     localStorage.setItem('userEmail', 'empty');
+  }
+
+  navigateTo(path: string) {
+    console.log('Navigating to:', path);
+    this.router.navigate([path]);
   }
 
   ngOnDestroy() {

@@ -1,6 +1,7 @@
 <ion-header>
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
+      <ion-menu-button [disabled]="isDisabled" menu="m1"></ion-menu-button>
       <ion-back-button [disabled]="isDisabled" defaultHref="/home"></ion-back-button>
     </ion-buttons>
     <ion-title>Add new task</ion-title>
@@ -25,6 +26,7 @@
       <ion-card-title>New task</ion-card-title>
     </ion-card-header>
     <ion-card-content *ngIf="!collapseCard">
+
  
       <ion-item>
         <ion-input (ionChange)="taskTitleCheck()" type="text" placeholder="Title" [(ngModel)]="event.title"></ion-input>
@@ -36,40 +38,67 @@
         <ion-input type="text" placeholder="Description" [(ngModel)]="event.desc"></ion-input>
       </ion-item> -->
 
-      <ion-item>
+      <ion-select 
+        label="Task type" 
+        placeholder="Select task type"
+        [(ngModel)]="event.taskType"
+        (ionChange)="onTaskTypeChange($event)">
+        <ion-select-option value="other">Other</ion-select-option>
+        <ion-select-option value="fitness">Fitness</ion-select-option>
+        <ion-select-option value="mindfulness">Mindfulness</ion-select-option>
+        <ion-select-option value="journaling">Journaling</ion-select-option>
+      </ion-select>
+      
+      <!-- Alternative: Working ion-select with proper event handling -->
+      <ion-item *ngIf="false">
         <ion-label>Task type</ion-label>
-        <ion-select placeholder="Options" [(ngModel)]="event.taskType">
-          <ion-select-option value="other">
-            Other
-          </ion-select-option>
-          <ion-select-option value="fitness">
-            Fitness
-          </ion-select-option>
-          <ion-select-option value="mindfulness">
-            Mindfulness
-          </ion-select-option>
-          <ion-select-option value="journaling">
-            Journaling
-          </ion-select-option>
+        <ion-select 
+          placeholder="Select task type" 
+          [value]="event.taskType"
+          interface="action-sheet" 
+          (selectionChange)="onTaskTypeChange($event)" 
+          (ionChange)="onTaskTypeChange($event)"
+          (click)="debugLog('Select clicked')"
+          (ionOpen)="debugLog('Select opened')" 
+          (ionCancel)="debugLog('Select cancelled')">
+          <ion-select-option value="other">Other</ion-select-option>
+          <ion-select-option value="fitness">Fitness</ion-select-option>
+          <ion-select-option value="mindfulness">Mindfulness</ion-select-option>
+          <ion-select-option value="journaling">Journaling</ion-select-option>
         </ion-select>
       </ion-item>
 
       
       <ion-item>
         <ion-label>Start date (by default today)</ion-label>
-        <ion-datetime displayFormat="MM/DD/YYYY HH:mm" pickerFormat="MMM D:HH:mm" [(ngModel)]="event.startTime" [min]="minDate"></ion-datetime>
+        <ion-datetime 
+          presentation="date-time" 
+          [(ngModel)]="event.startTime" 
+          [min]="minDate" 
+          (ionChange)="onDateTimeChange($event)"
+          [showDefaultButtons]="true"
+          [showDefaultTitle]="true">
+        </ion-datetime>
       </ion-item>
       <!-- <ion-item>
         <ion-label>End</ion-label>
         <ion-datetime displayFormat="MM/DD/YYYY HH:mm" pickerFormat="MMM D:HH:mm" [(ngModel)]="event.endTime" [min]="minDate"></ion-datetime>
       </ion-item> -->
-      <ion-item>
+      <ion-item button (click)="toggleCompleted()">
         <ion-label>Completed?</ion-label>
-        <ion-checkbox [(ngModel)]="event.completed"></ion-checkbox>
+        <ion-checkbox 
+          slot="end" 
+          [checked]="event.completed"
+          (click)="$event.stopPropagation()">
+        </ion-checkbox>
       </ion-item>
-      <ion-item>
+      <ion-item button (click)="toggleStreak()">
         <ion-label>Enable streak?</ion-label>
-        <ion-checkbox [(ngModel)]="event.streak"></ion-checkbox>
+        <ion-checkbox 
+          slot="end" 
+          [checked]="event.streak"
+          (click)="$event.stopPropagation()">
+        </ion-checkbox>
       </ion-item>
       <!-- <ion-item>
         <ion-label>All Day?</ion-label>
@@ -109,7 +138,8 @@
 
   </ion-row>
   <ion-grid>
-  <calendar 
+  <!-- Calendar component temporarily commented out -->
+  <!-- <calendar 
   [eventSource]="eventSource" 
   [calendarMode]="calendar.mode" 
   [currentDate]="calendar.currentDate"
@@ -122,7 +152,7 @@
   endHour="24"
   step="Hour"
   startingDayWeek="1">
-  </calendar>
+  </calendar> -->
 </ion-grid>
 
   <!-- </ion-list> -->
