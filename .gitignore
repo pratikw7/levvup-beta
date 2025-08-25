@@ -29,3 +29,18 @@ npm-debug.log*
 /platforms
 /plugins
 /www
+
+# Angular
+.angular/
+dist/
+tmp/
+out-tsc/
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

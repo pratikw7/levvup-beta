@@ -1,10 +1,45 @@
-ion-slides {
-    height: 100%;
+.tutorial-container {
+  height: 100%;
+  position: relative;
 }
 
-ion-slide {
+.tutorial-slide {
+  display: none;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  text-align: center;
+  
+  &.active {
     display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
+  }
+  
+  h3 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  p {
+    margin-bottom: 15px;
+    line-height: 1.5;
+  }
+}
+
+.tutorial-pager {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  
+  ion-button {
+    --color: var(--ion-color-medium);
+    
+    &.active {
+      --color: var(--ion-color-primary);
+    }
+  }
 }

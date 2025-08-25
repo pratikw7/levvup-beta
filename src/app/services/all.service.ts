@@ -1,10 +1,13 @@
 import { Injectable } from '@angular/core';
-import { AngularFirestoreCollection, AngularFirestore } from '@angular/fire/firestore';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { map, take } from 'rxjs/operators';
-import * as firebase from 'firebase';
-import { AngularFireAuth } from '@angular/fire/auth';
+import { getToken, onMessage } from 'firebase/messaging';
+import { doc, setDoc, updateDoc, collection, query, where, getDocs, getDoc, orderBy, limit, startAfter, FieldValue, arrayUnion, arrayRemove, addDoc, deleteDoc, onSnapshot, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { ref, set } from 'firebase/database';
+import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { FcmService } from './fcm.service';
+import { auth, firestore, messaging, functions, database } from '../firebase.config';
 
 export interface Tasks {
   broadcasted?: boolean;
@@ -44,6 +47,16 @@ export interface Tasks {
   journeyBeginsShown?: boolean;
   addFirstTaskShown?: boolean;
   saveFirstTaskShown?: boolean;
+  // Add missing properties for Firebase compatibility
+  gp?: number;
+  tutorialStatus?: boolean;
+  addFirstFriendShown?: boolean;
+  emails?: any[];
+  requests?: any[];
+  data2?: any;
+  created?: boolean;
+  notifDoc?: any;
+  notifs?: any[];
 }
 
 export interface MetaData {
@@ -60,24 +73,24 @@ export interface Friends {
 
 export interface NewUser {
   email: string;
+  id?: string;
 }
-
 
 @Injectable({
   providedIn: 'root'
 })
 export class AllService {
 
-  private allUsersCollection: AngularFirestoreCollection<NewUser>;
+  private allUsersCollection = collection(firestore, 'allUsers');
   private allUsers: Observable<NewUser[]>;
-  public usersCollection: AngularFirestoreCollection<Tasks>;
+  private usersCollection: any;
   private users: Observable<Tasks[]>;
   private usersNotifs: Observable<any[]>;
-  public refusersCollection: AngularFirestoreCollection<Tasks>;
+  private refusersCollection: any;
   private refusers: Observable<Tasks[]>;
-  private fusersCollection: AngularFirestoreCollection<Tasks>;
+  private fusersCollection: any;
   private fusers: Observable<Tasks[]>;
-  messaging = firebase.messaging();
+  // messaging is imported from firebase.config
   currentMessage = new BehaviorSubject(null);
   private friends: any[] = [];
   private tasksTemp: Tasks[] = [];
@@ -89,63 +102,88 @@ export class AllService {
     email: 'none'
   };
 
+  dbObj: any;
 
-  dbObj: AngularFirestore;
-
-  // changes in constr
-  // tslint:disable-next-line: max-line-length
-  constructor(private fcmService: FcmService, private afAuth: AngularFireAuth, dbFriends: AngularFirestore, dbNew: AngularFirestore) {
-    this.dbObj = dbNew;
-    this.allUsersCollection = dbFriends.collection('allUsers');
-    this.allUsers = this.allUsersCollection.snapshotChanges().pipe(
-      map(actions => {
-        return actions.map(a => {
-          const data = a.payload.doc.data();
-          const id = a.payload.doc.id;
-          return { id, ...data };
+  constructor(private fcmService: FcmService) {
+    this.dbObj = firestore;
+    this.allUsers = new Observable<NewUser[]>(observer => {
+      onSnapshot(this.allUsersCollection, (snapshot) => {
+        const users: NewUser[] = [];
+        snapshot.forEach((doc) => {
+          users.push({ ...doc.data() as NewUser, id: doc.id });
         });
-      })
-    );
-  }
-
-  setTdata(id, tData) {
-    this.tData[id] = tData;
-  }
-
-  getTdata(id) {
-    return this.tData[id];
-  }
-
-  //changes here
-  private updateToken(token) {
-    this.afAuth.authState.pipe(
-      take(1)
-    ).subscribe(user => {
-      if (!user) {
-        return;
-      }
-      const data = {
-        [user.uid]: token
-      };
-      this.usersCollection.doc('fcmTokens').update(data);
+        observer.next(users);
+      });
     });
+  }
+
+  // Helper function to migrate user data from old structure to new structure
+  async migrateUserData(email: string) {
+    console.log('🔄 Attempting to migrate user data from old to new structure for:', email);
+    
+    try {
+      const sanitizedEmail = email.replace(/\./g, '_');
+      
+      // Check if data exists in old structure
+      const oldMetaDataDoc = await getDoc(doc(firestore, sanitizedEmail, 'metaData'));
+      
+      if (oldMetaDataDoc.exists()) {
+        console.log('📁 Found data in old structure, migrating...');
+        const oldData = oldMetaDataDoc.data();
+        
+        // Create new structure documents
+        await setDoc(doc(firestore, 'users', email, 'data', 'metaData'), oldData);
+        console.log('✅ MetaData migrated successfully');
+        
+        // Migrate other documents if they exist
+        const oldTutorialDoc = await getDoc(doc(firestore, sanitizedEmail, 'tutorial'));
+        if (oldTutorialDoc.exists()) {
+          await setDoc(doc(firestore, 'users', email, 'data', 'tutorial'), oldTutorialDoc.data());
+          console.log('✅ Tutorial data migrated successfully');
+        }
+        
+        return true;
+      } else {
+        console.log('📭 No data found in old structure for migration');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Migration failed:', error);
+      return false;
+    }
+  }
+
+  getAllUsers() {
+    return this.allUsers;
+  }
+
+  getTdata(index: number) {
+    return this.tData[index];
+  }
+
+  setTdata(index: number, value: any) {
+    this.tData[index] = value;
   }
 
   getPermission() {
-    this.messaging.requestPermission().then(() => {
-      console.log('Notification permission granted.');
-      return this.messaging.getToken();
-    }).then(token => {
+    return getToken(messaging).then(token => {
       console.log('asd: '+token);
       this.updateToken(token);
-    }).catch((err) => {
-      console.log('Unable to get notification permission');
+      return token;
     });
+  }
+
+  updateToken(token: string) {
+    // Update token in Firestore
+    const userEmail = localStorage.getItem('userEmail');
+    if (userEmail) {
+      setDoc(doc(firestore, userEmail, 'metaData'), { devices: token }, { merge: true });
+    }
   }
 
   receiveMessage() {
     console.log("sss")
-    this.messaging.onMessage((payload) => {
+    onMessage(messaging, (payload) => {
       console.log("sss333")
       //console.log('Message received. ', payload);
       this.currentMessage.next(payload);
@@ -154,32 +192,29 @@ export class AllService {
 
   async sendDailyNotifs() {
     const ulist: string[] = [];
-    this.allUsersCollection.ref.get().then(allDocs => {
-      return allDocs.docs.forEach(doc => {
-        ulist.push(doc.data().email);
-        console.log(ulist.length);
-      });
-    }).then(() => {
-      console.log(ulist[1]);
-      this.fcmService.sendDailyNotifs(ulist);
+    const allDocs = await getDocs(this.allUsersCollection);
+    allDocs.forEach(doc => {
+      ulist.push(doc.data().email);
+      console.log(ulist.length);
     });
+    this.fcmService.sendDailyNotifs(ulist);
   }
 
   addUserToDB(email: string) {
     this.newUser.email = email;
-    this.allUsersCollection.add(this.newUser);
-    // tslint:disable-next-line: quotemark
-    this.dbObj.collection(email).add({title: "I'm a task! Try deleting me!", createdAt: new Date().getTime(), completed: false});
+    addDoc(this.allUsersCollection, this.newUser);
+    
+    // Add initial task - fix collection reference
+    addDoc(collection(firestore, 'users', email, 'tasks'), {title: "I'm a task! Try deleting me!", createdAt: new Date().getTime(), completed: false});
+    
     const data = {
-      // tslint:disable-next-line: max-line-length
       border : ' ',
-      // tslint:disable-next-line: max-line-length
-      photo : 'https://firebasestorage.googleapis.com/v0/b/ionic-gamify.appspot.com/o/defPhoto.png?alt=media&token=6816ee63-1187-4b63-9522-ab280fb01bbf',
+      photo : ' ',
       currLevel : 1,
       nextLevel : 2,
       xp : 0,
-      streak: 0,
-      tenacity: 0,
+      streak : 0,
+      tenacity : 0,
       tenacityCanUpdateFlag: true,
       tenacityLastUpdatedOn: new Date().getDay()
     };
@@ -195,283 +230,418 @@ export class AllService {
       walkthroughShown: false,
       saveFirstTaskShown: false
     };
+    
     setTimeout(() => {
-      this.usersCollection = this.dbObj.collection(localStorage.getItem('userEmail'));
-      this.usersCollection.doc('metaData').set(data);
-      this.usersCollection.doc('boosts').set({gp: 0, xpBonus: 1});
-      this.usersCollection.doc('friends').set({created: true});
-      this.usersCollection.doc('111').set({uname: localStorage.getItem('userEmail'), email: localStorage.getItem('userEmail')});
-      this.usersCollection.doc('tutorial').set(tutData);
-      this.usersCollection.doc('consecutiveLogin').set({data2});
+      this.usersCollection = collection(firestore, 'users', email, 'data');
+      setDoc(doc(firestore, 'users', email, 'data', 'metaData'), data);
+      setDoc(doc(firestore, 'users', email, 'data', 'boosts'), {gp: 0, xpBonus: 1});
+      setDoc(doc(firestore, 'users', email, 'data', 'friends'), {created: true});
+      setDoc(doc(firestore, 'users', email, 'data', 'profile'), {uname: email, email: email});
+      setDoc(doc(firestore, 'users', email, 'data', 'tutorial'), tutData);
+      setDoc(doc(firestore, 'users', email, 'data', 'consecutiveLogin'), {data2});
     }, 3000);
   }
 
-  changePhoto(filePath) {
+  updatePhoto(filePath: string, email: string) {
     const data = {
       photo: filePath
     };
-    return this.usersCollection.doc('metaData').update(data);
+    return updateDoc(doc(firestore, 'users', email, 'data', 'metaData'), data);
   }
 
   getNotifs(email: string) {
-    this.usersCollection = this.dbObj.collection(email);
-    this.refusersCollection = this.dbObj.collection(email);
-
-    this.usersNotifs = this.usersCollection.doc('notifDoc').collection('notifs').snapshotChanges().pipe(
-      map(actions => {
-        return actions.map(a => {
-          const data = a.payload.doc.data();
-          const id = a.payload.doc.id;
-          return { id, ...data };
+    this.usersNotifs = new Observable(observer => {
+      // Try new structure first: users/email/notifications
+      const unsubscribeNew = onSnapshot(collection(firestore, 'users', email, 'notifications'), (snapshot) => {
+        if (!snapshot.empty) {
+          const notifs: any[] = [];
+          snapshot.forEach((doc) => {
+            notifs.push({ ...doc.data(), id: doc.id });
+          });
+          console.log('✅ Notifications loaded from NEW structure:', notifs.length, 'notifications');
+          observer.next(notifs);
+        } else {
+          // Try old structure: legacy-users/sanitized-email/notifDoc/notifs (fallback for existing users)
+          console.log('🔄 New notification structure empty, trying old structure...');
+          const sanitizedEmail = email.replace(/\./g, '_');
+          const unsubscribeOld = onSnapshot(collection(firestore, 'legacy-users', sanitizedEmail, 'notifDoc', 'notifs'), (snapshot) => {
+            const notifs: any[] = [];
+            snapshot.forEach((doc) => {
+              notifs.push({ ...doc.data(), id: doc.id });
+            });
+            console.log('✅ Notifications loaded from OLD structure:', notifs.length, 'notifications');
+            observer.next(notifs);
+          }, (error) => {
+            console.error('❌ Error loading notifications from old structure:', error);
+            observer.next([]);
+          });
+        }
+      }, (error) => {
+        console.error('❌ Error loading notifications from new structure:', error);
+        // Try old structure as fallback
+        console.log('🔄 Trying old notification structure as fallback...');
+        const sanitizedEmail = email.replace(/\./g, '_');
+        const unsubscribeOld = onSnapshot(collection(firestore, 'legacy-users', sanitizedEmail, 'notifDoc', 'notifs'), (snapshot) => {
+          const notifs: any[] = [];
+          snapshot.forEach((doc) => {
+            notifs.push({ ...doc.data(), id: doc.id });
+          });
+          console.log('✅ Notifications loaded from OLD structure (fallback):', notifs.length, 'notifications');
+          observer.next(notifs);
+        }, (fallbackError) => {
+          console.error('❌ Error loading notifications from old structure (fallback):', fallbackError);
+          observer.next([]);
         });
-      })
-    );
+      });
+    });
     return this.usersNotifs;
   }
 
   getUserDB(email: string) {
-    this.usersCollection = this.dbObj.collection(email);
-    this.refusersCollection = this.dbObj.collection(email);
-
-    this.users = this.usersCollection.snapshotChanges().pipe(
-      map(actions => {
-        return actions.map(a => {
-          const data = a.payload.doc.data();
-          const id = a.payload.doc.id;
-          return { id, ...data };
+    this.users = new Observable<Tasks[]>(observer => {
+      // Try new structure first: users/email/tasks
+      const unsubscribeNew = onSnapshot(collection(firestore, 'users', email, 'tasks'), (snapshot) => {
+        if (!snapshot.empty) {
+          const tasks: Tasks[] = [];
+          snapshot.forEach((doc) => {
+            tasks.push({ ...doc.data() as Tasks, id: doc.id });
+          });
+          console.log('✅ Tasks loaded from NEW structure:', tasks.length, 'tasks');
+          observer.next(tasks);
+        } else {
+          // Try old structure: legacy-users/sanitized-email/tasks (fallback for existing users)
+          console.log('🔄 New structure empty, trying old structure...');
+          const sanitizedEmail = email.replace(/\./g, '_');
+          const unsubscribeOld = onSnapshot(collection(firestore, 'legacy-users', sanitizedEmail, 'tasks'), (snapshot) => {
+            const tasks: Tasks[] = [];
+            snapshot.forEach((doc) => {
+              tasks.push({ ...doc.data() as Tasks, id: doc.id });
+            });
+            console.log('✅ Tasks loaded from OLD structure:', tasks.length, 'tasks');
+            observer.next(tasks);
+          }, (error) => {
+            console.error('❌ Error loading tasks from old structure:', error);
+            observer.next([]);
+          });
+        }
+      }, (error) => {
+        console.error('❌ Error loading tasks from new structure:', error);
+        // Try old structure as fallback
+        console.log('🔄 Trying old structure as fallback...');
+        const sanitizedEmail = email.replace(/\./g, '_');
+        const unsubscribeOld = onSnapshot(collection(firestore, 'legacy-users', sanitizedEmail, 'tasks'), (snapshot) => {
+          const tasks: Tasks[] = [];
+          snapshot.forEach((doc) => {
+            tasks.push({ ...doc.data() as Tasks, id: doc.id });
+          });
+          console.log('✅ Tasks loaded from OLD structure (fallback):', tasks.length, 'tasks');
+          observer.next(tasks);
+        }, (fallbackError) => {
+          console.error('❌ Error loading tasks from old structure (fallback):', fallbackError);
+          observer.next([]);
         });
-      })
-    );
+      });
+    });
     return this.users;
   }
 
   getFriends(email: string) {
-    this.usersCollection = this.dbObj.collection(email);
-    this.refusersCollection = this.dbObj.collection(email);
-
-    const friends = this.usersCollection.doc('friends').snapshotChanges().pipe(
-      map(actions => {
-        return actions.payload.data();
-      })
-    );
-
+    const friends = new Observable(observer => {
+      onSnapshot(doc(firestore, 'users', email, 'data', 'friends'), (doc) => {
+        if (doc.exists()) {
+          observer.next(doc.data());
+        }
+      });
+    });
     return friends;
   }
 
   async getTutStatus(email: string) {
-    this.usersCollection = this.dbObj.collection(email);
-    this.refusersCollection = this.dbObj.collection(email);
-
-    const showTutorial: any = await this.usersCollection.doc('tutorial').ref.get().then(doc => {
-      return doc.data();
+    const showTutorial: any = await getDoc(doc(firestore, 'users', email, 'data', 'tutorial')).then(docSnap => {
+      if (docSnap.exists()) {
+        return docSnap.data();
+      }
+      return null;
     });
-    console.log(showTutorial.tutorialStatus);
-    return showTutorial.tutorialStatus;
-    // .then(() => {
-    //   const tutStatus: boolean = showTutorial.tutorial;
-    //   console.log(tutStatus);
-    //   return tutStatus;
-    // });
+    return showTutorial;
   }
 
   setTutStatus(status: boolean, email: string) {
-    this.usersCollection = this.dbObj.collection(email);
-    this.refusersCollection = this.dbObj.collection(email);
-
-    return this.usersCollection.doc('tutorial').update({tutorialStatus: status});
+    return updateDoc(doc(firestore, 'users', email, 'data', 'tutorial'), {tutorialStatus: status});
   }
 
   addFriend(sendersEmail: string, receiversEmail: string) {
-    const arrayUnion = firebase.firestore.FieldValue.arrayUnion;
-    const doc = this.usersCollection.doc('/friends');
-    return doc.update({
+    const docRef = doc(firestore, 'users', sendersEmail, 'data', 'friends');
+    return updateDoc(docRef, {
       emails: arrayUnion(receiversEmail)
     }).then( () => {
-      const arrayRemove = firebase.firestore.FieldValue.arrayRemove;
-      return doc.update({
-      requests: arrayRemove(receiversEmail)
+      return updateDoc(docRef, {
+        requests: arrayRemove(receiversEmail)
       });
     }).then(() => {
-      const f = this.dbObj.collection(receiversEmail).doc('/friends');
-      return f.update({
-      emails: arrayUnion(sendersEmail)
+      const f = doc(firestore, 'users', receiversEmail, 'data', 'friends');
+      return updateDoc(f, {
+        emails: arrayUnion(sendersEmail)
       }).then(() => {
-        const friendAcceptNotif = firebase.functions().httpsCallable('friendAcceptNotif');
+        const friendAcceptNotif = httpsCallable(functions, 'friendAcceptNotif');
         friendAcceptNotif({email: receiversEmail, fireObj: this.dbObj}).then(result => {
-          console.log(result.data());
-          return true;
+          if (result && result.data) {
+            console.log(result.data);
+          }
         });
       });
     });
   }
 
   sendFriendRequest(sendersEmail: string, receiversEmail: string) {
-    const arrayUnion = firebase.firestore.FieldValue.arrayUnion;
-    const req = this.dbObj.collection(receiversEmail).doc('/friends');
-    //get senders dtls
-    this.dbObj.collection(receiversEmail).doc('metaData').ref.get().then( metaData => {
-      const metaData2: any = metaData.data(); 
-      this.dbObj.collection(receiversEmail).doc('notifDoc').collection('notifs')
-     .add({sender:'New friend request!' , senderDp: metaData2.photo, title: 'from ' + sendersEmail}).catch(error => {
-      console.log(error);
-    });
-    });
+    const req = doc(firestore, 'users', receiversEmail, 'data', 'friends');
     
+    //get senders dtls
+    getDocs(collection(firestore, 'users', receiversEmail, 'data')).then( metaData => {
+      const metaData2: any = metaData.docs[0]?.data(); 
+      const notifCollection = collection(firestore, 'users', receiversEmail, 'notifications');
+      addDoc(notifCollection, {sender:'New friend request!' , senderDp: metaData2?.photo, title: 'from ' + sendersEmail}).catch(error => {
+        console.log(error);
+      });
+    });
 
-    //
     if (req !== null || req !== undefined) {
       this.fcmService.freq(sendersEmail, receiversEmail);
-      return req.update({
+      return updateDoc(req, {
         requests: arrayUnion(sendersEmail)
       });
-    } else {
-      alert('User not found.');
     }
-
   }
 
   deleteFriendRequest(email: string) {
-    const arrayRemove = firebase.firestore.FieldValue.arrayRemove;
-    const doc = this.usersCollection.doc('/friends');
-    return doc.update({
+    const userEmail = localStorage.getItem('userEmail') || '';
+    const docRef = doc(firestore, 'users', userEmail, 'data', 'friends');
+    return updateDoc(docRef, {
       requests: arrayRemove(email)
     });
   }
 
   delFriend(sendersEmail: string, receiversEmail: string) {
-    const arrayRemove = firebase.firestore.FieldValue.arrayRemove;
-    const doc = this.usersCollection.doc('/friends');
-    return doc.update({
+    const docRef = doc(firestore, 'users', sendersEmail, 'data', 'friends');
+    return updateDoc(docRef, {
       emails: arrayRemove(receiversEmail)
     }).then( () => {
-      const doc2 = this.dbObj.collection(receiversEmail).doc('/friends');
-      return doc2.update({
-      emails: arrayRemove(sendersEmail)
+      const doc2 = doc(firestore, 'users', receiversEmail, 'data', 'friends');
+      return updateDoc(doc2, {
+        emails: arrayRemove(sendersEmail)
       });
     });
   }
 
-  initDB(email: string) {
-    // this.newUser.email = email;
-    // this.allUsersCollection.add(this.newUser);
-    firebase.database().ref('' + email + '/').set({
+  addUserToRealtimeDB(email: string) {
+    set(ref(database, email + '/'), {
       username: email,
       title: 'Task title',
-      completed: true,
+      completed: false,
+      createdAt: new Date().getTime()
     });
   }
 
-  getAllUsers() {
-    return this.allUsers;
-  }
-
   getFriendsRequests(email: string) {
-    this.usersCollection = this.dbObj.collection(email);
-    this.refusersCollection = this.dbObj.collection(email);
-
-    const friends = this.usersCollection.doc('friends').snapshotChanges().pipe(
-      map(actions => {
-        return actions.payload.data();
-      })
-    );
-
+    const friends = new Observable(observer => {
+      onSnapshot(doc(firestore, 'users', email, 'data', 'friends'), (doc) => {
+        if (doc.exists()) {
+          observer.next(doc.data());
+        }
+      });
+    });
     return friends;
   }
 
   getFriendDB(email: string) {
-    this.fusersCollection = this.dbObj.collection(email);
-
-    this.fusers = this.fusersCollection.snapshotChanges().pipe(
-      map(actions => {
-        return actions.map(a => {
-          const data = a.payload.doc.data();
-          const id = a.payload.doc.id;
-          return { id, ...data };
+    this.fusers = new Observable<Tasks[]>(observer => {
+      onSnapshot(collection(firestore, 'users', email, 'tasks'), (snapshot) => {
+        const tasks: Tasks[] = [];
+        snapshot.forEach((doc) => {
+          tasks.push({ ...doc.data() as Tasks, id: doc.id });
         });
-      })
-    );
-
+        observer.next(tasks);
+      });
+    });
     return this.fusers;
-  }
-
-  getUsers() {
-    return this.users;
   }
 
   async addTask(task: Tasks, myemail: string) {
     if (task.completed === true) {
-      const flist = await this.usersCollection.doc('friends').ref.get().then(doc => {
-      return doc.data();
-    });
-      if (!task.isStreaky) {
-        task.broadcasted = true;
-      }
-      console.log('fcm b');
-      this.fcmService.broadcastToAll(flist.emails, task.title, myemail);
-      return this.usersCollection.add(task);
-    } else {
-      return this.usersCollection.add(task);
-    }
-  }
-// check here if notif for the task was broadcasted or not! if it was Bt'd then don;t send else send to all Friends
-// update this to a func which sends F's tokens & task title as i/p to the FCM func
-
-  // updateTask(task: Tasks, id: string) {
-  //   return this.usersCollection.doc(id).update(task);
-  // }
-
-  async updateTask(task: Tasks, id: string, myemail: string) {
-      const x = await this.usersCollection.doc(id).ref.get().then(doc => {
-      return doc.data();
-    });
-      if (x.broadcasted === false && task.completed === true) {
-        const flist = await this.usersCollection.doc('friends').ref.get().then(doc => {
-        return doc.data();
-      });
-        if (!task.isStreaky) {
-          task.broadcasted = true;
+      const flist = await getDocs(collection(firestore, 'users', myemail, 'friends')).then(snapshot => {
+        if (!snapshot.empty) {
+          return snapshot.docs[0].data();
         }
+        return null;
+      });
+      
+      if (flist && flist.emails && flist.emails.length > 0) {
         console.log('fcm b');
         this.fcmService.broadcastToAll(flist.emails, task.title, myemail);
-        return this.usersCollection.doc(id).update(task);
+      }
+      return addDoc(collection(firestore, 'users', myemail, 'tasks'), task as any);
     } else {
-      return this.usersCollection.doc(id).update(task);
+      return addDoc(collection(firestore, 'users', myemail, 'tasks'), task as any);
     }
   }
 
-  updateMetaData(data: any) {
-    return this.usersCollection.doc('metaData').update(data);
+  async updateTask(task: Tasks, id: string, myemail: string) {
+    const x = await getDocs(collection(firestore, 'users', myemail, 'tasks')).then(snapshot => {
+      const doc = snapshot.docs.find(d => d.id === id);
+      return doc ? doc.data() : null;
+    });
+    
+    if (x && x.broadcasted === false && task.completed === true) {
+      const flist = await getDocs(collection(firestore, 'users', myemail, 'friends')).then(snapshot => {
+        if (!snapshot.empty) {
+          return snapshot.docs[0].data();
+        }
+        return null;
+      });
+      
+      if (flist && flist.emails && flist.emails.length > 0) {
+        console.log('fcm b');
+        this.fcmService.broadcastToAll(flist.emails, task.title, myemail);
+      }
+      return updateDoc(doc(firestore, 'users', myemail, 'tasks', id), task as any);
+    } else {
+      return updateDoc(doc(firestore, 'users', myemail, 'tasks', id), task as any);
+    }
+  }
+
+  async updateMetaData(data: any) {
+    const userEmail = localStorage.getItem('userEmail');
+    if (userEmail) {
+      console.log('🔄 UpdateMetaData: Starting update for email:', userEmail);
+      
+      try {
+        // First try to ensure the document exists in the new structure by using setDoc with merge
+        await setDoc(doc(firestore, 'users', userEmail, 'data', 'metaData'), data, { merge: true });
+        console.log('✅ UpdateMetaData: New structure update successful');
+        return;
+      } catch (error) {
+        console.log('🔄 UpdateMetaData: New structure failed, attempting migration...');
+        console.error('New structure error:', error);
+        
+        try {
+          // Try to migrate data from old structure
+          const migrated = await this.migrateUserData(userEmail);
+          
+          if (migrated) {
+            // Try updating new structure again after migration
+            await setDoc(doc(firestore, 'users', userEmail, 'data', 'metaData'), data, { merge: true });
+            console.log('✅ UpdateMetaData: New structure update successful after migration');
+            return;
+          } else {
+            // No migration possible, fallback to old structure
+            const sanitizedEmail = userEmail.replace(/\./g, '_');
+            await setDoc(doc(firestore, sanitizedEmail, 'metaData'), data, { merge: true });
+            console.log('✅ UpdateMetaData: Old structure update successful');
+            return;
+          }
+        } catch (migrationError) {
+          console.error('❌ UpdateMetaData: Migration and fallback failed');
+          console.error('Migration error:', migrationError);
+          throw migrationError;
+        }
+      }
+    } else {
+      console.error('❌ UpdateMetaData: No userEmail found in localStorage');
+      throw new Error('No user email found');
+    }
   }
 
   updateTutorial(data: any) {
-    return this.usersCollection.doc('tutorial').update(data);
+    const userEmail = localStorage.getItem('userEmail');
+    if (userEmail) {
+      console.log('🔄 UpdateTutorial: Starting update for email:', userEmail);
+      
+      // First try to ensure the document exists in the new structure by using setDoc with merge
+      return setDoc(doc(firestore, 'users', userEmail, 'data', 'tutorial'), data, { merge: true })
+        .then(() => {
+          console.log('✅ UpdateTutorial: New structure update successful');
+        })
+        .catch(error => {
+          console.log('🔄 UpdateTutorial: New structure failed, trying old structure...');
+          console.error('New structure error:', error);
+          
+          // Fallback to old structure
+          const sanitizedEmail = userEmail.replace(/\./g, '_');
+          return setDoc(doc(firestore, sanitizedEmail, 'tutorial'), data, { merge: true })
+            .then(() => {
+              console.log('✅ UpdateTutorial: Old structure update successful');
+            })
+            .catch(oldError => {
+              console.error('❌ UpdateTutorial: Both structures failed');
+              console.error('Old structure error:', oldError);
+              throw oldError;
+            });
+        });
+    } else {
+      console.error('❌ UpdateTutorial: No userEmail found in localStorage');
+      return Promise.reject(new Error('No user email found'));
+    }
   }
 
   updateBoosts(data: any) {
-    return this.usersCollection.doc('boosts').update(data);
+    const userEmail = localStorage.getItem('userEmail');
+    if (userEmail) {
+      return setDoc(doc(firestore, 'users', userEmail, 'data', 'boosts'), data, { merge: true });
+    }
   }
 
   updateConsecutiveLogin(data: any) {
-    return this.usersCollection.doc('consecutiveLogin').update(data);
+    const userEmail = localStorage.getItem('userEmail');
+    if (userEmail) {
+      return setDoc(doc(firestore, 'users', userEmail, 'data', 'consecutiveLogin'), data, { merge: true });
+    }
   }
 
   updateUname(data: any) {
-    return this.usersCollection.doc('111').update(data);
+    const userEmail = localStorage.getItem('userEmail');
+    if (userEmail) {
+      return setDoc(doc(firestore, 'users', userEmail, 'data', 'profile'), data, { merge: true });
+    }
   }
 
-  removeTask(id) {
-      return this.usersCollection.doc(id).delete();
+  removeTask(id: string) {
+    const userEmail = localStorage.getItem('userEmail');
+    if (userEmail) {
+      return deleteDoc(doc(firestore, 'users', userEmail, 'tasks', id));
+    }
   }
 
-  removeNotif(id) {
-    return this.usersCollection.doc('notifDoc').collection('notifs').doc(id).delete();
+  removeNotif(id: string) {
+    const userEmail = localStorage.getItem('userEmail');
+    if (userEmail) {
+      return deleteDoc(doc(firestore, 'users', userEmail, 'notifications', id));
+    }
   }
 
-  updateNotif(notif, id: string) {
-    return this.usersCollection.doc('notifDoc').collection('notifs').doc(id).update(notif);
+  updateNotif(notif: any, id: string) {
+    const userEmail = localStorage.getItem('userEmail');
+    if (userEmail) {
+      return updateDoc(doc(firestore, 'users', userEmail, 'notifications', id), notif);
+    }
   }
 
-  getUser(id) {
-    return this.usersCollection.doc<Tasks>(id).valueChanges();
+  getUser(id: string) {
+    const userEmail = localStorage.getItem('userEmail');
+    if (userEmail) {
+      return new Observable(observer => {
+        onSnapshot(doc(firestore, 'users', userEmail, 'tasks', id), (doc) => {
+          if (doc.exists()) {
+            observer.next({ ...doc.data() as Tasks, id: doc.id });
+          }
+        });
+      });
+    }
+  }
+
+  changePhoto(filePath: string, email: string) {
+    const data = {
+      photo: filePath
+    };
+    return updateDoc(doc(firestore, email, 'metaData'), data);
   }
 }

@@ -1,165 +1,170 @@
 import { Component, OnInit } from '@angular/core';
-import { AngularFireStorage, AngularFireUploadTask } from '@angular/fire/storage';
-import { finalize } from 'rxjs/operators';
-import { Observable } from 'rxjs';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { IonicModule } from '@ionic/angular';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { AlertController, LoadingController, ToastController } from '@ionic/angular';
+import { AuthService } from '../auth/auth.service';
 import { AllService } from '../services/all.service';
 import { FcmService } from '../services/fcm.service';
-import { AuthService } from '../auth/auth.service';
-import { AlertController } from '@ionic/angular';
-import { Router } from '@angular/router';
-// import * as firebase from 'firebase';
-// import * as functions from 'firebase/functions';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 @Component({
   selector: 'app-settings',
   templateUrl: './settings.page.html',
   styleUrls: ['./settings.page.scss'],
+  standalone: true,
+  imports: [CommonModule, IonicModule, FormsModule, ReactiveFormsModule, RouterModule]
 })
 export class SettingsPage implements OnInit {
 
-//   constructor(private storage: AngularFireStorage) { }
+  pwd1: string;
+  oldpwd: string;
+  pwd2: string;
+  myemail: string;
+  photoURL: string;
+  borderURL: string;
+  currLevel: number;
+  nextLevel: number;
+  xp: number;
+  streak: number;
+  tenacity: number;
+  longestStreak: number;
+  xpPerLvl: Map<number, number>;
+  prg = 0.0;
+  prg2 = 0.0;
+  prgLvl = 0.0;
+  prgLvl2 = 0.0;
+  boost: number;
+  xpBonus: number;
+  form: UntypedFormGroup;
+  uname: string;
 
-// // check fierbase cmd if error enable storage
+  constructor(private alertCtrl: AlertController,
+              private loadingCtrl: LoadingController,
+              private toastCtrl: ToastController,
+              private authService: AuthService,
+              private fcmService: FcmService, 
+              private allService: AllService,
+              private formBuilder: UntypedFormBuilder) { }
 
-//   ngOnInit() {
-//     const x = this.storage.ref('gs://ionic-gamify.appspot.com');
-//   }
-
-imgSrc: string;
-selectedImage: any = null;
-isSubmitted: boolean;
-uname: string;
-pwd1: string;
-pwd2: string;
-oldpwd: string;
-
-formTemplate = new FormGroup({
-  imageUrl: new FormControl('', Validators.required)
-});
-
-constructor(private authService: AuthService,
-            private alertCtrl: AlertController,
-            private router: Router,
-            private fcmService: FcmService, private storage: AngularFireStorage, private allService: AllService) { }
-
-ngOnInit() {
-  this.resetForm();
-  if (this.allService.getTdata(3) === 'toSettings') {
-    // tslint:disable-next-line: max-line-length
-    this.showAlert('The settings page', 'You can update your profile picture, username & password here.', 'OK!');
-    // tslint:disable-next-line: max-line-length
-  }
-}
-
-tutDone() {
-  this.showAlert('Hurray! Tutorial completed :D', 'Nice work! Now lets get back to the homepage to add new tasks for the day and complete them.', 'Sure!');
-}
-
-showAlert(header1: string, message1: string, btnName: string) {
-  console.log('header1: ' + header1 + 'msg1: ' + message1);
-  this.alertCtrl
-    .create({
-      header: header1,
-      message: message1,
-      buttons: [{
-        text: btnName,
-        role: btnName,
-        cssClass: 'my-custom',
-        handler: (anyValue) => {
-          if (header1 === 'Hurray! Tutorial completed :D') {
-            this.allService.setTdata(3, 'toSettingsFinished');
-            this.allService.updateTutorial({walkthroughShown: true});
-            this.router.navigate(['/home']);
-          }
-          if (header1 === 'The settings page') {
-            this.tutDone();
-          }
-        }
-      }]
-    })
-    .then(alertEl => {
-      alertEl.present();
-      alertEl.backdropDismiss = false;
-      this.allService.updateTutorial({journeyBeginsShown: true});
+  ngOnInit() {
+    this.form = this.formBuilder.group({
+      imageUrl: ['', Validators.required]
     });
-}
 
+    this.myemail = localStorage.getItem('userEmail');
+    let k = 0;
+    this.xpPerLvl = new Map();
+    this.xpPerLvl.set(1, k);
+    k += 10;
+    for (let i = 2; i <= 100; i++) {
+      if (i === 2 || i === 3) {
+        this.xpPerLvl.set(i, k);
+        k += 20;
+      } else if (i > 3 && i <= 10 ) {
+        this.xpPerLvl.set(i, k);
+        k += 30;
+      } else if (i > 10 && i <= 20 ) {
+        this.xpPerLvl.set(i, k);
+        k += 40;
+      } else if (i > 20 && i <= 30 ) {
+        this.xpPerLvl.set(i, k);
+        k += 50;
+      } else if (i > 30 && i <= 40 ) {
+        this.xpPerLvl.set(i, k);
+        k += 60;
+      } else if (i > 40 && i <= 100 ) {
+        this.xpPerLvl.set(i, k);
+        k += 70;
+      }
+    }
 
-updatePassword() {
-  if (this.pwd1 === this.pwd2) {
-    this.authService.updatePassword(this.pwd1, this.oldpwd);
-    const message = ' Password changed successfully! Remember to change passwords after every 30 days';
-    this.showAlert2(message);
+    this.allService.getUserDB(this.myemail).subscribe(user => {
+      user.forEach(task => {
+        if (task.id === 'metaData') {
+          this.photoURL = task.photo;
+          this.borderURL = task.border;
+          this.currLevel = task.currLevel;
+          this.nextLevel = task.nextLevel;
+          this.xp = task.xp;
+          this.streak = task.streak;
+          this.tenacity = task.tenacity;
+          this.longestStreak = task.longestStreak;
+        } else if (task.id === 'boosts') {
+          this.boost = task.gp;
+          this.xpBonus = task.xpBonus;
+        }
+      });
+    });
+
+    this.allService.getTutStatus(this.myemail).then(status => {
+      if (status && status.tutorialStatus === true) {
+        this.allService.setTdata(3, 'toSettingsFinished');
+      }
+    });
   }
-}
 
-showAlert2(mymessage: string) {
-  this.alertCtrl
-    .create({
-      header: `Update success!`,
-      message: mymessage,
-      buttons: ['Okay']
-    })
-    .then(alertEl => alertEl.present());
-}
-
-updateUname() {
-  this.allService.updateMetaData({username: this.uname});
-  this.allService.updateUname({uname: this.uname}).then(() => {
-    this.showAlert2('Username changed successfully.');
-  });
-}
-
-ssub() {
-  this.fcmService.sub('discounts');
-}
-
-showPreview(event: any) {
-  // const x = firebase.functions().httpsCallable('s');
-  // x().then()
-  if (event.target.files && event.target.files[0]) {
-    const reader = new FileReader();
-    reader.onload = (e: any) => this.imgSrc = e.target.result;
-    reader.readAsDataURL(event.target.files[0]);
-    this.selectedImage = event.target.files[0];
-  } else {
-    this.imgSrc = '/assets/img/image_placeholder.jpg';
-    this.selectedImage = null;
+  async changePassword() {
+    if (this.pwd1 !== this.pwd2) {
+      this.showAlert('Error', 'Passwords do not match!', 'OK');
+      return;
+    }
+    if (this.pwd1.length < 6) {
+      this.showAlert('Error', 'Password should be at least 6 characters long!', 'OK');
+      return;
+    }
+    try {
+      await this.authService.changePassword(this.pwd1, this.oldpwd);
+      this.showAlert('Success', 'Password changed successfully!', 'OK');
+    } catch (error) {
+      this.showAlert('Error', 'Failed to change password. Please check your old password.', 'OK');
+    }
   }
-}
 
-onSubmit(formValue) {
-  this.isSubmitted = true;
-  if (this.formTemplate.valid) {
-    // const filePath = `${formValue}/${this.selectedImage.name.split('.').slice(0, -1).join('.')}_${new Date().getTime()}`;
-    const filePath = `${formValue}/${this.selectedImage.name.split('.').slice(0, -1).join('.')}_${new Date().getTime()}`;
-    const fileRef = this.storage.ref(filePath);
-    this.storage.upload(filePath, this.selectedImage).snapshotChanges().pipe(
-      finalize(() => {
-        fileRef.getDownloadURL().subscribe((url) => {
-          formValue.imageUrl = url;
-          this.allService.changePhoto(formValue.imageUrl).then(() => {
-            alert('Profile photo changed successfully.');
-          });
-          this.resetForm();
+  async uploadImage() {
+    if (this.form.valid) {
+      const loading = await this.loadingCtrl.create({
+        message: 'Uploading image...'
+      });
+      await loading.present();
+
+      try {
+        const imageUrl = this.form.get('imageUrl').value;
+        await this.allService.changePhoto(imageUrl, this.myemail).then(() => {
+          this.showAlert('Success', 'Image uploaded successfully!', 'OK');
+          this.photoURL = imageUrl;
         });
-      })
-    ).subscribe();
+      } catch (error) {
+        this.showAlert('Error', 'Failed to upload image.', 'OK');
+      } finally {
+        await loading.dismiss();
+      }
+    }
   }
-}
 
-get formControls() {
-  return this.formTemplate.controls;
-}
+  async updateUname() {
+    if (this.uname && this.uname.trim()) {
+      try {
+        await this.allService.updateMetaData({username: this.uname});
+        await this.allService.updateUname({uname: this.uname});
+        this.showAlert('Success', 'Username changed successfully!', 'OK');
+      } catch (error) {
+        this.showAlert('Error', 'Failed to update username.', 'OK');
+      }
+    } else {
+      this.showAlert('Error', 'Please enter a valid username.', 'OK');
+    }
+  }
 
-resetForm() {
-  this.formTemplate.reset();
-  this.formTemplate.setValue({
-    imageUrl: '',
-  });
-  this.imgSrc = '/assets/img/image_placeholder.jpg';
-  this.selectedImage = null;
-  this.isSubmitted = false;
-}
+  async showAlert(header: string, message: string, button: string) {
+    const alert = await this.alertCtrl.create({
+      header,
+      message,
+      buttons: [button]
+    });
+    await alert.present();
+  }
 }

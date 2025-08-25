@@ -1,22 +1,28 @@
 import { Component, OnInit } from '@angular/core';
-import { AllService, NewUser, Tasks } from '../services/all.service';
-import { AlertController, LoadingController } from '@ionic/angular';
+import { CommonModule } from '@angular/common';
+import { IonicModule } from '@ionic/angular';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
+import { AlertController, LoadingController, ToastController } from '@ionic/angular';
+import { AllService } from '../services/all.service';
 import { Plugins } from '@capacitor/core';
 import { DataService } from '../services/data.service';
-import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-friends',
   templateUrl: './friends.page.html',
   styleUrls: ['./friends.page.scss'],
+  standalone: true,
+  imports: [CommonModule, IonicModule, FormsModule, RouterModule]
 })
 export class FriendsPage implements OnInit {
-  tasks: Tasks[] = [];
-  tasksTemp: Tasks[] = [];
-  tasksTemp2: Tasks[] = [];
-  tasksTemp3: Tasks[] = [];
-  tasks2: Tasks[];
-  tasks3: Tasks[];
+  tasks: any[] = [];
+  tasksTemp: any[] = [];
+  tasksTemp2: any[] = [];
+  tasksTemp3: any[] = [];
+  tasks2: any[];
+  tasks3: any[];
   friends: any[] = [];
   frequests: any[] = [];
   friendEmail: string;
@@ -37,7 +43,7 @@ export class FriendsPage implements OnInit {
   public myemail: string;
   taskid: any;
   nav: any;
-  allUsers: NewUser[] = [];
+  allUsers: any[] = [];
   isDisabled: boolean;
   constructor(private loadingController: LoadingController,
               private allService: AllService,

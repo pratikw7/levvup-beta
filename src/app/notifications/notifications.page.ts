@@ -1,11 +1,18 @@
 import { Component, OnInit } from '@angular/core';
-import { ToastController } from '@ionic/angular';
+import { CommonModule } from '@angular/common';
+import { IonicModule } from '@ionic/angular';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
+import { AlertController, LoadingController, ToastController } from '@ionic/angular';
 import { AllService } from '../services/all.service';
 
 @Component({
   selector: 'app-notifications',
   templateUrl: './notifications.page.html',
   styleUrls: ['./notifications.page.scss'],
+  standalone: true,
+  imports: [CommonModule, IonicModule, FormsModule, RouterModule]
 })
 export class NotificationsPage implements OnInit {
 
@@ -14,8 +21,12 @@ export class NotificationsPage implements OnInit {
   userNotifs: any[] = [];
   userNotifsCount: number;
 
-  constructor( private allService: AllService,
-               private toastController: ToastController
+  constructor(
+    private router: Router,
+    private allService: AllService,
+    private alertCtrl: AlertController,
+    private loadingCtrl: LoadingController,
+    private toastController: ToastController
   ) { }
 
   ngOnInit() {

@@ -1,15 +1,15 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, from } from 'rxjs';
+import { BehaviorSubject, from, Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-import { Plugins } from '@capacitor/core';
 
 import { environment } from '../../environments/environment';
 import { User } from './user.model';
 import { AllService } from '../services/all.service';
 import { Router } from '@angular/router';
-import * as firebase from 'firebase';
-import { AngularFireAuth } from '@angular/fire/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, EmailAuthProvider, reauthenticateWithCredential, updatePassword, onAuthStateChanged } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, firestore } from '../firebase.config';
 
 export interface AuthResponseData {
   kind: string;
@@ -67,9 +67,9 @@ export class AuthService implements OnDestroy {
   }
 
   constructor(private router: Router,
-              private afAuth: AngularFireAuth,
-              private http: HttpClient, private allService: AllService) {
-                firebase.auth().onAuthStateChanged((user) => {
+              private http: HttpClient, 
+              private allService: AllService) {
+                onAuthStateChanged(auth, (user) => {
                   if (user) {
                     this.myuser = user;
                     console.log('User set');
@@ -81,98 +81,181 @@ export class AuthService implements OnDestroy {
               }
 
   autoLogin() {
-    return from(Plugins.Storage.get({ key: 'authData' })).pipe(
-      map(storedData => {
-        if (!storedData || !storedData.value) {
-          return null;
-        }
-        const parsedData = JSON.parse(storedData.value) as {
-          token: string;
-          tokenExpirationDate: string;
-          userId: string;
-          email: string;
-        };
-        const expirationTime = new Date(parsedData.tokenExpirationDate);
-        if (expirationTime <= new Date()) {
-          return null;
-        }
-        const user = new User(
-          parsedData.userId,
-          parsedData.email,
-          parsedData.token,
-          expirationTime
-        );
-        return user;
-      }),
-      tap(user => {
+    return from(this.checkAuthState()).pipe(
+      map(user => {
         if (user) {
           this._user.next(user);
-          this.autoLogout(user.tokenDuration);
+          return user;
         }
-      }),
-      map(user => {
-        return !!user;
+        return null;
       })
     );
   }
 
+  private async checkAuthState(): Promise<User | null> {
+    return new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        unsubscribe();
+        if (user) {
+          console.log('🔥 checkAuthState: User found', user.uid, user.email);
+          const token = await user.getIdToken();
+          const userObj = new User(
+            user.uid,
+            user.email || '',
+            token,
+            new Date(Date.now() + 3600000) // 1 hour from now
+          );
+          
+          // Make sure we update the user state
+          this._user.next(userObj);
+          
+          // Store email in localStorage for guard compatibility
+          if (user.email) {
+            localStorage.setItem('userEmail', user.email);
+            console.log('🔥 checkAuthState: Email stored in localStorage:', user.email);
+          }
+          
+          resolve(userObj);
+        } else {
+          console.log('🔥 checkAuthState: No user found');
+          resolve(null);
+        }
+      });
+    });
+  }
+
   signup(email: string, password: string) {
-    this.allService.addUserToDB(email);
-    return this.http
-      .post<AuthResponseData>(
-        `https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=${
-          environment.firebaseAPIKey
-        }`,
-        { email, password, returnSecureToken: true }
-      )
-      .pipe(tap(this.setUserData.bind(this)));
+    return createUserWithEmailAndPassword(auth, email, password)
+      .then(async (userCredential) => {
+        const user = userCredential.user;
+        if (user) {
+          // Get the user token
+          const token = await user.getIdToken();
+          
+          // Create user object
+          const userObj = new User(
+            user.uid,
+            user.email || '',
+            token,
+            new Date(Date.now() + 3600000) // 1 hour from now
+          );
+          
+          // Update the user state
+          this._user.next(userObj);
+          
+          // Store user data in Firestore
+          try {
+            await setDoc(doc(firestore, 'users', user.uid), {
+              email: user.email,
+              createdAt: new Date()
+            });
+          } catch (firestoreError) {
+            console.warn('Firestore error (non-critical):', firestoreError);
+          }
+          
+          // Add user to app's user database (make it async and non-blocking)
+          try {
+            console.log('🔥 Adding user to app database...');
+            // Make this non-blocking by not awaiting it
+            setTimeout(() => {
+              try {
+                this.allService.addUserToDB(email);
+                console.log('🔥 User added to app database successfully');
+              } catch (dbError) {
+                console.warn('🔥 App database error (non-critical):', dbError);
+              }
+            }, 100);
+          } catch (dbError) {
+            console.warn('App database error (non-critical):', dbError);
+          }
+          
+          return user;
+        }
+        throw new Error('User creation failed');
+      })
+      .catch((error) => {
+        console.error('Signup error:', error);
+        throw error;
+      });
   }
 
   login(email: string, password: string) {
-    this.mauth = this.afAuth.auth;
-    this.mauth.signInWithEmailAndPassword(email, password).then(() => {
-      console.log(this.mauth.currentUser);
-    }).catch((error) => {
-      console.log(error);
-    });
-    return this.http
-      .post<AuthResponseData>(
-        `https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=${
-          environment.firebaseAPIKey
-        }`,
-        { email, password, returnSecureToken: true }
-      )
-      .pipe(tap(this.setUserData.bind(this)));
+    console.log('🔥 AuthService: Starting login for', email);
+    console.log('🔥 Auth instance:', auth ? 'Ready' : 'Not initialized');
+    
+    return signInWithEmailAndPassword(auth, email, password)
+      .then(async (userCredential) => {
+        console.log('🔥 Firebase signIn successful:', userCredential);
+        const user = userCredential.user;
+        if (user) {
+          console.log('🔥 User object obtained:', user.uid);
+          
+          // Get the user token
+          const token = await user.getIdToken();
+          console.log('🔥 Token obtained successfully');
+          
+          // Create user object
+          const userObj = new User(
+            user.uid,
+            user.email || '',
+            token,
+            new Date(Date.now() + 3600000) // 1 hour from now
+          );
+          
+          // Update the user state
+          this._user.next(userObj);
+          console.log('🔥 User state updated in BehaviorSubject');
+          
+          // Store email in localStorage for service compatibility
+          if (user.email) {
+            localStorage.setItem('userEmail', user.email);
+            console.log('🔥 Login: Email stored in localStorage:', user.email);
+          }
+          
+          this.mauth = auth;
+          console.log('🔥 Login completed successfully');
+          return user;
+        }
+        console.error('🔥 No user in credential');
+        throw new Error('Login failed');
+      })
+      .catch((error) => {
+        console.error('🔥 Login error details:', {
+          code: error.code,
+          message: error.message,
+          customData: error.customData,
+          stack: error.stack
+        });
+        throw error;
+      });
   }
 
   logout() {
+    auth.signOut();
+    this._user.next(null);
+    this.router.navigateByUrl('/auth');
     if (this.activeLogoutTimer) {
       clearTimeout(this.activeLogoutTimer);
     }
-    this._user.next(null);
-    Plugins.Storage.remove({ key: 'authData' });
-    this.router.navigate(['auth']);
+    this.activeLogoutTimer = null;
   }
 
   resetPassword(email: string) {
-    const auth = firebase.auth();
-    auth.sendPasswordResetEmail(email).then(() => {
-      console.log('Email sent!');
-    }).catch((error) => {
-      console.log(error);
-    });
+    return sendPasswordResetEmail(auth, email);
   }
 
-  updatePassword(pwd: string, oldpwd: string) {
-    let credential = firebase.auth.EmailAuthProvider.credential(this.myuser.email, oldpwd);
-    this.myuser.reauthenticateWithCredential(credential).then(() => {
-      // User re-authenticated.
-      this.myuser.updatePassword(pwd);
-    }).catch((error) => {
-      // An error happened.
-      alert('Password should be more than 6 letters (alphanumeric)');
-      console.log(error);
-    });
+  changePassword(oldpwd: string, newpwd: string) {
+    const user = auth.currentUser;
+    
+    if (user && user.email) {
+      const credential = EmailAuthProvider.credential(user.email, oldpwd);
+      return reauthenticateWithCredential(user, credential)
+        .then(() => {
+          return updatePassword(user, newpwd);
+        });
+    }
+    
+    return Promise.reject(new Error('No user logged in'));
   }
 
   ngOnDestroy() {
@@ -188,40 +271,5 @@ export class AuthService implements OnDestroy {
     this.activeLogoutTimer = setTimeout(() => {
       this.logout();
     }, duration);
-  }
-
-  private setUserData(userData: AuthResponseData) {
-    const expirationTime = new Date(
-      new Date().getTime() + +userData.expiresIn * 1000
-    );
-    const user = new User(
-      userData.localId,
-      userData.email,
-      userData.idToken,
-      expirationTime
-    );
-    this._user.next(user);
-    this.autoLogout(user.tokenDuration);
-    this.storeAuthData(
-      userData.localId,
-      userData.idToken,
-      expirationTime.toISOString(),
-      userData.email
-    );
-  }
-
-  private storeAuthData(
-    userId: string,
-    token: string,
-    tokenExpirationDate: string,
-    email: string
-  ) {
-    const data = JSON.stringify({
-      userId,
-      token,
-      tokenExpirationDate,
-      email
-    });
-    Plugins.Storage.set({ key: 'authData', value: data });
   }
 }

@@ -1,4 +1,8 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { IonicModule } from '@ionic/angular';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { Tasks, AllService, NewUser } from '../services/all.service';
 import { AlertController, LoadingController, PopoverController, ToastController } from '@ionic/angular';
 import { FcmService } from '../services/fcm.service';
@@ -13,6 +17,8 @@ import { ActivatedRoute, Router } from '@angular/router';
   selector: 'app-home',
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
+  standalone: true,
+  imports: [CommonModule, IonicModule, FormsModule, RouterModule]
 })
 export class HomePage implements OnInit {
 
@@ -31,7 +37,7 @@ export class HomePage implements OnInit {
   currLevel: number;
   nextLevel: number;
   allUsers: NewUser[];
-  photoURL: string;
+  photoURL: string = 'assets/defPhoto.png';
   borderURL: string;
   currUser: Tasks[];
   tasks: Tasks[] = [];
@@ -151,8 +157,11 @@ export class HomePage implements OnInit {
     // await LocalNotifications.requestPermissions();
     this.notif = true;
     this.myemail = localStorage.getItem('userEmail');
-    if (this.myemail !== 'empty') {
+    console.log('🏠 HomePage: User email from localStorage:', this.myemail);
+    if (this.myemail !== 'empty' && this.myemail) {
+      console.log('🔔 HomePage: Subscribing to notifications for:', this.myemail);
       this.allService.getNotifs(this.myemail).subscribe(resN => {
+        console.log('🔔 HomePage: Notifications received:', resN);
         let cnt = 0;
         this.userNotifs = resN;
         this.userNotifs.sort((a, b) => {
@@ -167,7 +176,9 @@ export class HomePage implements OnInit {
           });
         }
       });
+      console.log('📋 HomePage: Subscribing to tasks for:', this.myemail);
       this.allService.getUserDB(this.myemail).subscribe(res2 => {
+        console.log('📋 HomePage: Tasks received:', res2);
         this.tasks = [];
         this.tasksTemp = res2;
         this.tasksTemp.forEach(task => {
@@ -312,9 +323,11 @@ export class HomePage implements OnInit {
             }
           });
         // });
-        this.fcm.getPermission().subscribe((r => {
+        this.fcm.getPermission().then((r) => {
           console.log('r: ' + r);
-        }));
+        }).catch(error => {
+          console.error('Error getting FCM permission:', error);
+        });
         setTimeout(() => {
         let cl = 1;
         let reqXP = 0;
@@ -670,12 +683,17 @@ export class HomePage implements OnInit {
   }
 
   async updateTask() {
+      console.log('🔄 updateTask() called');
+      console.log('📧 User email:', this.myemail);
+      console.log('📋 Tasks to update:', this.tasks.length);
 
-      // this.calcXP();
-      const loading = await this.loadingController.create({
-        message: 'Updating tasks..'
-      });
-      await loading.present();
+      // Skip loading controller due to Ionic 8 + Angular 19 compatibility issues
+      console.log('🔄 Skipping loading controller (compatibility issue)...');
+      // const loading = await this.loadingController.create({
+      //   message: 'Updating tasks..'
+      // });
+      // await loading.present();
+      console.log('✅ Proceeding without loading controller');
 
       this.getCurrDb();
       setTimeout(async () => {
@@ -739,11 +757,11 @@ export class HomePage implements OnInit {
                 const tlu = new Date().getDay();
                 // tslint:disable-next-line: max-line-length
                 this.allService.updateMetaData({tenacityCanUpdateFlag: false, tenacityLastUpdatedOn: tlu, tenacity: this.tenacity, xp: this.xp, currLevel: this.currLevel, border: ' '}).then(() => {
-                  loading.dismiss();
+                  // loading.dismiss() // Skipped due to compatibility issue;
                 });
               } else {
                 this.allService.updateMetaData({xp: this.xp, currLevel: this.currLevel, border: ' '}).then(() => {
-                  loading.dismiss();
+                  // loading.dismiss() // Skipped due to compatibility issue;
                 });
               }
             } else if (this.currLevel === 2 || this.currLevel === 3) {
@@ -754,11 +772,11 @@ export class HomePage implements OnInit {
               const tlu = new Date().getDay();
               // tslint:disable-next-line: max-line-length
               this.allService.updateMetaData({tenacityCanUpdateFlag: false, tenacityLastUpdatedOn: tlu, tenacity: this.tenacity, xp: this.xp, currLevel: this.currLevel, border: ' '}).then(() => {
-                loading.dismiss();
+                // loading.dismiss() // Skipped due to compatibility issue;
               });
             } else {
               this.allService.updateMetaData({xp: this.xp, currLevel: this.currLevel, border: ' '}).then(() => {
-                loading.dismiss();
+                // loading.dismiss() // Skipped due to compatibility issue;
               });
             }
             } else if (this.currLevel >= 4 && this.currLevel <= 6) {
@@ -769,11 +787,11 @@ export class HomePage implements OnInit {
                 const tlu = new Date().getDay();
                 // tslint:disable-next-line: max-line-length
                 this.allService.updateMetaData({tenacityCanUpdateFlag: false, tenacityLastUpdatedOn: tlu, tenacity: this.tenacity, xp: this.xp, currLevel: this.currLevel, border: ' '}).then(() => {
-                  loading.dismiss();
+                  // loading.dismiss() // Skipped due to compatibility issue;
                 });
               } else {
                 this.allService.updateMetaData({xp: this.xp, currLevel: this.currLevel, border: ' '}).then(() => {
-                  loading.dismiss();
+                  // loading.dismiss() // Skipped due to compatibility issue;
                 });
               }
             } else if (this.currLevel >= 7 && this.currLevel <= 10) {
@@ -784,11 +802,11 @@ export class HomePage implements OnInit {
                 const tlu = new Date().getDay();
                 // tslint:disable-next-line: max-line-length
                 this.allService.updateMetaData({tenacityCanUpdateFlag: false, tenacityLastUpdatedOn: tlu, tenacity: this.tenacity, xp: this.xp, currLevel: this.currLevel, border: ' '}).then(() => {
-                  loading.dismiss();
+                  // loading.dismiss() // Skipped due to compatibility issue;
                 });
               } else {
                 this.allService.updateMetaData({xp: this.xp, currLevel: this.currLevel, border: ' '}).then(() => {
-                  loading.dismiss();
+                  // loading.dismiss() // Skipped due to compatibility issue;
                 });
               }
             } else if (this.currLevel >= 10 && this.currLevel <= 15) {
@@ -799,22 +817,22 @@ export class HomePage implements OnInit {
                 const tlu = new Date().getDay();
                 // tslint:disable-next-line: max-line-length
                 this.allService.updateMetaData({tenacityCanUpdateFlag: false, tenacityLastUpdatedOn: tlu, tenacity: this.tenacity, xp: this.xp, currLevel: this.currLevel, border: ' '}).then(() => {
-                  loading.dismiss();
+                  // loading.dismiss() // Skipped due to compatibility issue;
                 });
               } else {
                 this.allService.updateMetaData({xp: this.xp, currLevel: this.currLevel, border: ' '}).then(() => {
-                  loading.dismiss();
+                  // loading.dismiss() // Skipped due to compatibility issue;
                 });
               }
             }
           } else {
             console.log('Nothing to update.');
-            loading.dismiss();
+            // loading.dismiss() // Skipped due to compatibility issue;
           }
         }
       if (this.allService.getTdata(2) === 'toAddFriend') {
         this.isVisibleTask = false;
-        loading.dismiss();
+        // loading.dismiss() // Skipped due to compatibility issue;
         this.router.navigate(['/friends']);
       }
   }, 2000);

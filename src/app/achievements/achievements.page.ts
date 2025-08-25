@@ -1,10 +1,18 @@
-import { Component, ElementRef, OnInit } from '@angular/core';
-import { AllService, Tasks } from '../services/all.service';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { IonicModule } from '@ionic/angular';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
+import { AlertController, LoadingController, ToastController } from '@ionic/angular';
+import { AllService } from '../services/all.service';
 
 @Component({
   selector: 'app-achievements',
   templateUrl: './achievements.page.html',
   styleUrls: ['./achievements.page.scss'],
+  standalone: true,
+  imports: [CommonModule, IonicModule, FormsModule, RouterModule]
 })
 export class AchievementsPage implements OnInit {
 
@@ -17,7 +25,10 @@ export class AchievementsPage implements OnInit {
   mindfulnessLvl: number;
   journalingLvl: number;
   myemail: string;
-  tasks: Tasks[] = [];
+  tasks: any[] = [];
+  tasksTemp: any[] = [];
+  tasks2: any[] = [];
+  tasks3: any[] = [];
 
   constructor(private allService: AllService) { }
 
