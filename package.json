@@ -34,7 +34,7 @@
     "core-js": "^2.5.4",
     "firebase": "^8.10.1",
     "firebaseui": "^4.5.0",
-    "firebaseui-angular": "^4.1.0",
+    "firebaseui-angular": "^6.1.0",
     "ionic2-calendar": "^0.6.6",
     "jetifier": "^1.6.5",
     "rxjs": "^6.5.5",
