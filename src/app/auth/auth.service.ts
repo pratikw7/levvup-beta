@@ -8,8 +8,8 @@ import { environment } from '../../environments/environment';
 import { User } from './user.model';
 import { AllService } from '../services/all.service';
 import { Router } from '@angular/router';
-import * as firebase from 'firebase';
-import { AngularFireAuth } from '@angular/fire/auth';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
 export interface AuthResponseData {
   kind: string;
@@ -67,9 +67,10 @@ export class AuthService implements OnDestroy {
   }
 
   constructor(private router: Router,
-              private afAuth: AngularFireAuth,
-              private http: HttpClient, private allService: AllService) {
-                firebase.auth().onAuthStateChanged((user) => {
+              private http: HttpClient, 
+              private allService: AllService) {
+                const auth = getAuth();
+                onAuthStateChanged(auth, (user) => {
                   if (user) {
                     this.myuser = user;
                     console.log('User set');
@@ -109,70 +110,74 @@ export class AuthService implements OnDestroy {
           this._user.next(user);
           this.autoLogout(user.tokenDuration);
         }
-      }),
-      map(user => {
-        return !!user;
       })
     );
   }
 
   signup(email: string, password: string) {
-    this.allService.addUserToDB(email);
-    return this.http
-      .post<AuthResponseData>(
-        `https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=${
-          environment.firebaseAPIKey
-        }`,
-        { email, password, returnSecureToken: true }
-      )
-      .pipe(tap(this.setUserData.bind(this)));
+    const auth = getAuth();
+    return createUserWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        const user = userCredential.user;
+        if (user) {
+          // Store user data in Firestore
+          const db = getFirestore();
+          setDoc(doc(db, 'users', user.uid), {
+            email: user.email,
+            createdAt: new Date()
+          });
+          
+          // Add user to app's user database
+          this.allService.addUserToDB(email);
+          
+          return user;
+        }
+        throw new Error('User creation failed');
+      });
   }
 
   login(email: string, password: string) {
-    this.mauth = this.afAuth.auth;
-    this.mauth.signInWithEmailAndPassword(email, password).then(() => {
-      console.log(this.mauth.currentUser);
-    }).catch((error) => {
-      console.log(error);
-    });
-    return this.http
-      .post<AuthResponseData>(
-        `https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=${
-          environment.firebaseAPIKey
-        }`,
-        { email, password, returnSecureToken: true }
-      )
-      .pipe(tap(this.setUserData.bind(this)));
+    const auth = getAuth();
+    return signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        const user = userCredential.user;
+        if (user) {
+          this.mauth = auth;
+          return user;
+        }
+        throw new Error('Login failed');
+      });
   }
 
   logout() {
+    const auth = getAuth();
+    auth.signOut();
+    this._user.next(null);
+    this.router.navigateByUrl('/auth');
     if (this.activeLogoutTimer) {
       clearTimeout(this.activeLogoutTimer);
     }
-    this._user.next(null);
-    Plugins.Storage.remove({ key: 'authData' });
-    this.router.navigate(['auth']);
+    this.activeLogoutTimer = null;
   }
 
   resetPassword(email: string) {
-    const auth = firebase.auth();
-    auth.sendPasswordResetEmail(email).then(() => {
-      console.log('Email sent!');
-    }).catch((error) => {
-      console.log(error);
-    });
+    const auth = getAuth();
+    return sendPasswordResetEmail(auth, email);
   }
 
-  updatePassword(pwd: string, oldpwd: string) {
-    let credential = firebase.auth.EmailAuthProvider.credential(this.myuser.email, oldpwd);
-    this.myuser.reauthenticateWithCredential(credential).then(() => {
-      // User re-authenticated.
-      this.myuser.updatePassword(pwd);
-    }).catch((error) => {
-      // An error happened.
-      alert('Password should be more than 6 letters (alphanumeric)');
-      console.log(error);
-    });
+  changePassword(oldpwd: string, newpwd: string) {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    
+    if (user && user.email) {
+      const credential = EmailAuthProvider.credential(user.email, oldpwd);
+      return reauthenticateWithCredential(user, credential)
+        .then(() => {
+          return updatePassword(user, newpwd);
+        });
+    }
+    
+    return Promise.reject(new Error('No user logged in'));
   }
 
   ngOnDestroy() {
@@ -188,40 +193,5 @@ export class AuthService implements OnDestroy {
     this.activeLogoutTimer = setTimeout(() => {
       this.logout();
     }, duration);
-  }
-
-  private setUserData(userData: AuthResponseData) {
-    const expirationTime = new Date(
-      new Date().getTime() + +userData.expiresIn * 1000
-    );
-    const user = new User(
-      userData.localId,
-      userData.email,
-      userData.idToken,
-      expirationTime
-    );
-    this._user.next(user);
-    this.autoLogout(user.tokenDuration);
-    this.storeAuthData(
-      userData.localId,
-      userData.idToken,
-      expirationTime.toISOString(),
-      userData.email
-    );
-  }
-
-  private storeAuthData(
-    userId: string,
-    token: string,
-    tokenExpirationDate: string,
-    email: string
-  ) {
-    const data = JSON.stringify({
-      userId,
-      token,
-      tokenExpirationDate,
-      email
-    });
-    Plugins.Storage.set({ key: 'authData', value: data });
   }
 }

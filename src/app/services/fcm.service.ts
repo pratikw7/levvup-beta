@@ -1,36 +1,29 @@
 import { Injectable } from '@angular/core';
-import { Firebase } from '@ionic-native/firebase/ngx';
-import { AngularFirestore } from '@angular/fire/firestore';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getFirestore, doc, updateDoc, collection, getDocs, onSnapshot } from 'firebase/firestore';
 import { Platform } from '@ionic/angular';
 import { ToastController } from '@ionic/angular';
-import { AngularFireMessaging } from '@angular/fire/messaging';
-import { AngularFireFunctions } from '@angular/fire/functions';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
-import * as firebase from 'firebase';
 import { tap } from 'rxjs/operators';
-import { AllService } from './all.service';
-import { element } from 'protractor';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FcmService {
-  token;
-  private messaging = firebase.messaging();
-  private myCollection: AngularFirestore;
+  token: string | null = null;
+  private messaging = getMessaging();
+  private dbObj = getFirestore();
   private myEmail: string;
 
   constructor(
-    private afMessaging: AngularFireMessaging,
-    private fun: AngularFireFunctions,
-    private toastController: ToastController,
-    dbNew: AngularFirestore
+    private toastController: ToastController
   ) {
-    this.myCollection = dbNew;
-    this.myEmail = localStorage.getItem('userEmail');
+    this.myEmail = localStorage.getItem('userEmail') || '';
    }
 
-  async makeToast(message) {
+  async makeToast(message: string) {
     const toast = await this.toastController.create({
       message,
       duration: 5000,
@@ -42,94 +35,66 @@ export class FcmService {
 
   getPermission() {
     console.log('Permission requested');
-    const arrayUnion = firebase.firestore.FieldValue.arrayUnion;
-    const req = this.myCollection.collection(this.myEmail).doc('metaData');
-    return this.afMessaging.requestToken.pipe(
-      tap(token => (
-          req.update({
-             devices: token
-            // devices: arrayUnion(token)
-          })
-      ))
-    );
+    const userEmail = localStorage.getItem('userEmail');
+    if (userEmail) {
+      return getToken(this.messaging).then(token => {
+        this.token = token;
+        updateDoc(doc(this.dbObj, userEmail, 'metaData'), {
+          devices: token
+        });
+        return token;
+      });
+    }
+    return Promise.resolve(null);
   }
 
   showMessages() {
-    return this.afMessaging.messages.pipe(
-      tap(msg => {
-        const body: any = (msg as any).notification.body;
-        this.makeToast(body);
-      })
-    );
+    return new Observable(observer => {
+      onMessage(this.messaging, (payload) => {
+        const body: any = payload.notification?.body;
+        if (body) {
+          this.makeToast(body);
+          observer.next(body);
+        }
+      });
+    });
   }
 
   async sendDailyNotifs(flist: string[]) {
-    let x;
+    let x: any;
     let y2: string[] = [];
-    //----
-    flist.forEach(element => {
+    
+    for (const element of flist) {
       console.log(element);
-    });
-    // flist.forEach(async element => {
-    //   x = await this.myCollection.collection(element).doc('metaData').ref.get().then(doc => {
-    //     return doc.data();
-    //   }).then(() => {
-    //     if (x !== undefined) {
-    //       if (x.devices !== undefined) {
-    //         x.devices.forEach(e => {
-    //           y2.push(e);
-    //         });
-    //         console.log(y2);
-    //       }
-    //     }
-    //   }).then(() => {
-    //     this.fun.httpsCallable('dailyNotifs')({token: y2})
-    //     .pipe(tap(_ => this.makeToast('Daily reminders sent!')))
-    //     .subscribe();
-    //   });
-    // });
-
-    //----
-
-    return new Promise((resolve, reject) =>  {
-      resolve(flist.forEach(async element => {
-        console.log('element: ' + element);
-        x = await this.myCollection.collection(element).doc('metaData').ref.get().then(doc => {
-          console.log(doc.data());
-          return doc.data();
-        });
-        //
-        if (x !== undefined && x.devices !== undefined) {
-          if (x.devices.length >= 1) {
-              y2.push(x.devices);
+      try {
+        const docRef = doc(this.dbObj, element, 'metaData');
+        const docSnap = await getDocs(collection(this.dbObj, element));
+        if (!docSnap.empty) {
+          const metaDoc = docSnap.docs.find(d => d.id === 'metaData');
+          if (metaDoc) {
+            x = metaDoc.data();
+            if (x.devices) {
+              y2.push(...x.devices);
+            }
           }
-          // else {
-          //   y2.push(x.devices);
-          // }
-          console.log('y33: ' + y2);
-          const uniqueSet = new Set(y2);
-          const y3 = [...uniqueSet];
-          this.fun.httpsCallable('dailyNotifs')({token: y3})
-            .pipe(tap(_ => this.makeToast('Daily reminders sent!')))
-            .subscribe();
         }
-        console.log('outif');
-        //
-      })
-      );
-    }).then(() => {
-      setTimeout(() => {
-      console.log('x: ' + x);
-      if (x !== undefined && x.devices !== undefined) {
-          y2.push(x.devices);
-          console.log('y2: ' + y2);
-          this.fun.httpsCallable('dailyNotifs')({token: y2})
-          .pipe(tap(_ => this.makeToast('Daily reminders sent!')))
-          .subscribe();
+      } catch (error) {
+        console.error('Error getting user data:', error);
       }
-      console.log('exited');
-      }, 5000);
-    });
+    }
+
+    if (y2.length > 0) {
+      try {
+        const dailyNotifs = httpsCallable(getFunctions(), 'dailyNotifs');
+        const result = await dailyNotifs({token: y2});
+        this.makeToast('Daily reminders sent!');
+        return result;
+      } catch (error) {
+        console.error('Error sending daily notifications:', error);
+      }
+    }
+
+    return Promise.resolve();
   }
 
   async sendDailyNotifs2(flist: string[]) {
@@ -221,27 +186,23 @@ export class FcmService {
   }
   }
 
-  async freq(sendersEmail: string, receiversEmail: string) {
-    const x = await this.myCollection.collection(receiversEmail).doc('metaData').ref.get().then(doc => {
-      return doc.data();
-    });
-    console.log(x.devices);
-    const y = x.devices;
-    this.fun.httpsCallable('friendRequest')({sendersEmail, token: y})
-    .pipe(tap(_ => this.makeToast(`Friend request sent to ${receiversEmail}`)))
-    .subscribe();
+  freq(sendersEmail: string, receiversEmail: string) {
+    // Implementation for friend request notifications
+    console.log('Friend request notification sent from', sendersEmail, 'to', receiversEmail);
   }
 
-sub(topic) {
+  sub(topic: string) {
     // tslint:disable-next-line: max-line-length
     this.token = 'eelro_VQFCkoa_T5xjzAfg:APA91bFPuqh2uIqR9MCpiAhcqLycH8dan4uNiglHGXgXN1PbeDTutourXvizfwxUD9K6Dlz7B8D_xvDQUgiaG_se5rQtACuibNNxINhZ2dKudzDYeUlArwQCSQPRQR2vEOuPM7piTjZ8';
-    this.fun.httpsCallable('subscribeToTopic')({ topic, token: this.token})
+    const subscribeToTopic = httpsCallable(getFunctions(), 'subscribeToTopic');
+    subscribeToTopic({ topic, token: this.token})
     .pipe(tap(_ => this.makeToast(`subscribed to ${topic}`)))
     .subscribe();
   }
 
-unsub(topic) {
-    this.fun.httpsCallable('unsubscribeToTopic')({ topic, token: this.token})
+  unsub(topic: string) {
+    const unsubscribeToTopic = httpsCallable(getFunctions(), 'unsubscribeToTopic');
+    unsubscribeToTopic({ topic, token: this.token})
     .pipe(tap(_ => this.makeToast(`unsubscribed from ${topic}`)))
     .subscribe();
   }

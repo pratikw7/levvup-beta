@@ -1,10 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { NgForm } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LoadingController, AlertController } from '@ionic/angular';
-import { Observable } from 'rxjs';
 
-import { AuthService, AuthResponseData } from './auth.service';
+import { AuthService } from './auth.service';
 import { AllService } from '../services/all.service';
 
 @Component({
@@ -15,84 +14,82 @@ import { AllService } from '../services/all.service';
 export class AuthPage implements OnInit {
   isLoading = false;
   isLogin = true;
+  form: FormGroup;
 
   constructor(
     private authService: AuthService,
     private router: Router,
     private loadingCtrl: LoadingController,
     private alertCtrl: AlertController,
-    private allService: AllService
+    private allService: AllService,
+    private formBuilder: FormBuilder
   ) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.form = this.formBuilder.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]]
+    });
+  }
 
-  authenticate(email: string, password: string) {
+  async onSubmit() {
+    if (this.isLoading || !this.form.valid) {
+      return;
+    }
+    const email = this.form.value.email;
+    const password = this.form.value.password;
+    let authObs: Promise<any>;
+
+    if (this.isLogin) {
+      authObs = this.authService.login(email, password);
+    } else {
+      authObs = this.authService.signup(email, password);
+    }
+
     this.isLoading = true;
-    let tutFlag = false;
-    this.loadingCtrl
-      .create({ keyboardClose: true, message: 'Logging in...' })
-      .then(loadingEl => {
-        loadingEl.present();
-        let authObs: Observable<AuthResponseData>;
+    const loadingEl = await this.loadingCtrl.create({
+      message: this.isLogin ? 'Logging in...' : 'Creating account...'
+    });
+    await loadingEl.present();
+
+    try {
+      const user = await authObs;
+      if (user) {
+        localStorage.setItem('userEmail', email);
         if (this.isLogin) {
-          tutFlag = false;
-          authObs = this.authService.login(email, password);
+          this.router.navigateByUrl('/home');
         } else {
-          tutFlag = true;
-          authObs = this.authService.signup(email, password);
+          this.router.navigateByUrl('/tutorial');
         }
-        authObs.subscribe(
-          async resData => {
-            localStorage.setItem( 'userEmail', resData.email);
-            this.isLoading = false;
-            loadingEl.dismiss();
-            // this.router.navigateByUrl('/places/tabs/discover');
-            // if (await this.allService.getTutStatus(resData.email) === false) {
-            if (tutFlag === false) {
-              this.router.navigate(['/home']);
-            } else {
-              this.router.navigate(['/tutorial']);
-            }
-          },
-          errRes => {
-            loadingEl.dismiss();
-            const code = errRes.error.error.message;
-            let message = 'Could not sign you up, please try again.';
-            if (code === 'EMAIL_EXISTS') {
-              message = 'This email address already exists!';
-            } else if (code === 'EMAIL_NOT_FOUND' || code === 'INVALID_PASSWORD') {
-              message = 'E-mail ID or password is incorrect!';
-            }
-            this.showAlert(message);
-          }
-        );
-      });
+      }
+    } catch (error) {
+      let message = 'Could not authenticate you. Please try again.';
+      if (error.code === 'auth/user-not-found') {
+        message = 'User not found. Please check your email or sign up.';
+      } else if (error.code === 'auth/wrong-password') {
+        message = 'Incorrect password. Please try again.';
+      } else if (error.code === 'auth/email-already-in-use') {
+        message = 'Email already in use. Please use a different email or sign in.';
+      } else if (error.code === 'auth/weak-password') {
+        message = 'Password is too weak. Please use a stronger password.';
+      }
+      
+      this.showAlert(message);
+    } finally {
+      this.isLoading = false;
+      await loadingEl.dismiss();
+    }
   }
 
   onSwitchAuthMode() {
     this.isLogin = !this.isLogin;
   }
 
-  onSubmit(form: NgForm) {
-    if (!form.valid) {
-      return;
-    }
-    const email = form.value.email;
-    const password = form.value.password;
-
-    this.authenticate(email, password);
-    form.reset();
-  }
-
-  resetPassword() {
-    this.router.navigate(['/reset-password']);
-  }
-
   private showAlert(message: string) {
     this.alertCtrl
       .create({
         header: 'Authentication failed',
-        message: message,
+        message,
         buttons: ['Okay']
       })
       .then(alertEl => alertEl.present());
