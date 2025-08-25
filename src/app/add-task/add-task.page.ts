@@ -50,7 +50,7 @@ export class AddTaskPage implements OnInit {
 
   viewTitle = '';
 
-  @ViewChild(CalendarComponent, {static: false}) myCal: CalendarComponent;
+  @ViewChild(CalendarComponent) myCal: CalendarComponent;
   isDisabled: boolean;
 
   constructor(private nav: NavController,
