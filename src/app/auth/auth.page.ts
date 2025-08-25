@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { LoadingController, AlertController } from '@ionic/angular';
 
 import { AuthService } from './auth.service';
@@ -14,7 +14,7 @@ import { AllService } from '../services/all.service';
 export class AuthPage implements OnInit {
   isLoading = false;
   isLogin = true;
-  form: FormGroup;
+  form: UntypedFormGroup;
 
   constructor(
     private authService: AuthService,
@@ -22,7 +22,7 @@ export class AuthPage implements OnInit {
     private loadingCtrl: LoadingController,
     private alertCtrl: AlertController,
     private allService: AllService,
-    private formBuilder: FormBuilder
+    private formBuilder: UntypedFormBuilder
   ) {}
 
   ngOnInit() {

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../auth/auth.service';
 import { AllService } from '../services/all.service';
 import { FcmService } from '../services/fcm.service';
@@ -32,7 +32,7 @@ export class SettingsPage implements OnInit {
   prgLvl2 = 0.0;
   boost: number;
   xpBonus: number;
-  form: FormGroup;
+  form: UntypedFormGroup;
   uname: string;
 
   constructor(private alertCtrl: AlertController,
@@ -41,7 +41,7 @@ export class SettingsPage implements OnInit {
               private authService: AuthService,
               private fcmService: FcmService, 
               private allService: AllService,
-              private formBuilder: FormBuilder) { }
+              private formBuilder: UntypedFormBuilder) { }
 
   ngOnInit() {
     this.form = this.formBuilder.group({

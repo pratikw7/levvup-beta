@@ -21,25 +21,24 @@ import { NgCalendarModule } from 'ionic2-calendar';
 import { ConsecutiveLoginPageModule } from './consecutive-login/consecutive-login.module';
 
 @NgModule({
-  declarations: [AppComponent],
-  entryComponents: [],
-  imports: [
-    ReactiveFormsModule,
-    AppRoutingModule,
-    BrowserModule,
-    HttpClientModule,
-    IonicModule.forRoot(),
-    AppRoutingModule,
-    ConsecutiveLoginPageModule,
-    ServiceWorkerModule.register('ngsw-worker.js', { enabled: environment.production }),
-    NgCalendarModule
-  ],
-  providers: [
-    StatusBar,
-    SplashScreen,
-    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
-    FcmService
-  ],
-  bootstrap: [AppComponent],
+    declarations: [AppComponent],
+    imports: [
+        ReactiveFormsModule,
+        AppRoutingModule,
+        BrowserModule,
+        HttpClientModule,
+        IonicModule.forRoot(),
+        AppRoutingModule,
+        ConsecutiveLoginPageModule,
+        ServiceWorkerModule.register('ngsw-worker.js', { enabled: environment.production }),
+        NgCalendarModule
+    ],
+    providers: [
+        StatusBar,
+        SplashScreen,
+        { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+        FcmService
+    ],
+    bootstrap: [AppComponent]
 })
 export class AppModule {}
