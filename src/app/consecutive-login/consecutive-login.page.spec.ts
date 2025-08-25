@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { IonicModule } from '@ionic/angular';
 
 import { ConsecutiveLoginPage } from './consecutive-login.page';
@@ -7,7 +7,7 @@ describe('ConsecutiveLoginPage', () => {
   let component: ConsecutiveLoginPage;
   let fixture: ComponentFixture<ConsecutiveLoginPage>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ ConsecutiveLoginPage ],
       imports: [IonicModule.forRoot()]
