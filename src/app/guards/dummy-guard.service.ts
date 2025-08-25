@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
-import { CanActivate, ActivatedRoute, ActivatedRouteSnapshot, Router, CanLoad } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 
 @Injectable({
   providedIn: 'root'
 })
-export class DummyGuardService implements CanLoad {
+export class DummyGuardService  {
 
   constructor(private alertController: AlertController, private router: Router) { }
 
