@@ -1,18 +1,25 @@
 import { Component, OnInit } from '@angular/core';
-import { PopoverController } from '@ionic/angular';
+import { CommonModule } from '@angular/common';
+import { IonicModule } from '@ionic/angular';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
+import { AlertController } from '@ionic/angular';
 import { AllService } from '../services/all.service';
 
 @Component({
   selector: 'app-consecutive-login',
   templateUrl: './consecutive-login.page.html',
   styleUrls: ['./consecutive-login.page.scss'],
+  standalone: true,
+  imports: [CommonModule, IonicModule, FormsModule, RouterModule]
 })
 export class ConsecutiveLoginPage implements OnInit {
 
   days: boolean[] = [];
   claimedStatus: boolean[] = [];
 
-  constructor(private popover: PopoverController, private allService: AllService) { }
+  constructor(private alertCtrl: AlertController, private allService: AllService) { }
 
   ngOnInit() {
     let dayNumber = Number(localStorage.getItem('day'));
@@ -38,7 +45,7 @@ export class ConsecutiveLoginPage implements OnInit {
   }
 
   closePopover() {
-    this.popover.dismiss();
+    // this.popover.dismiss(); // This line was removed as per the edit hint
   }
 
   claim(xpBonus: number, index: number, ev?) {

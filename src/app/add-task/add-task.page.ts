@@ -1,14 +1,19 @@
 import { Component, OnInit, ViewChild, Inject, LOCALE_ID } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { IonicModule } from '@ionic/angular';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { Tasks, AllService } from '../services/all.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LoadingController, NavController, AlertController } from '@ionic/angular';
-import { CalendarComponent } from 'ionic2-calendar';
 import { formatDate } from '@angular/common';
 
 @Component({
   selector: 'app-add-task',
   templateUrl: './add-task.page.html',
   styleUrls: ['./add-task.page.scss'],
+  standalone: true,
+  imports: [CommonModule, IonicModule, FormsModule, RouterModule]
 })
 export class AddTaskPage implements OnInit {
 
@@ -50,7 +55,6 @@ export class AddTaskPage implements OnInit {
 
   viewTitle = '';
 
-  @ViewChild(CalendarComponent) myCal: CalendarComponent;
   isDisabled: boolean;
 
   constructor(private nav: NavController,
@@ -90,7 +94,7 @@ export class AddTaskPage implements OnInit {
       });
     }
     this.resetEvent();
-    this.myCal.loadEvents();
+    // this.myCal.loadEvents(); // Removed as per edit hint
     if (this.allService.getTdata(1) === 'toAddTask') {
       this.allService.setTdata(1, 'toAddTaskDone');
       // tslint:disable-next-line: max-line-length
@@ -131,7 +135,7 @@ export class AddTaskPage implements OnInit {
     };
     this.eventSource.push(eventCopy);
     // console.log(eventCopy.startTime.getTime());
-    this.myCal.loadEvents();
+    // this.myCal.loadEvents(); // Removed as per edit hint
   }
 
   changeMode(mode) {
@@ -198,7 +202,7 @@ export class AddTaskPage implements OnInit {
     //   // eventCopy.endTime.setUTCDate(eventCopy.startTime.getUTCDate() + 1);
     // }
 
-    // this.myCal.loadEvents();
+    // this.myCal.loadEvents(); // Removed as per edit hint
 
 ///
     const loading = await this.loadingController.create({
@@ -246,7 +250,7 @@ export class AddTaskPage implements OnInit {
           this.nav.back();
         }
     });
-    // this.myCal.loadEvents();
+    // this.myCal.loadEvents(); // Removed as per edit hint
     this.resetEvent();
   }
 
@@ -291,7 +295,7 @@ export class AddTaskPage implements OnInit {
 
     this.allService.getUser(this.taskid).subscribe(res => {
       loading.dismiss();
-      this.task = res;
+      this.task = res as Tasks;
     });
   }
 

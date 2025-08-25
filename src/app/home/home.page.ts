@@ -1,4 +1,8 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { IonicModule } from '@ionic/angular';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { Tasks, AllService, NewUser } from '../services/all.service';
 import { AlertController, LoadingController, PopoverController, ToastController } from '@ionic/angular';
 import { FcmService } from '../services/fcm.service';
@@ -13,6 +17,8 @@ import { ActivatedRoute, Router } from '@angular/router';
   selector: 'app-home',
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
+  standalone: true,
+  imports: [CommonModule, IonicModule, FormsModule, RouterModule]
 })
 export class HomePage implements OnInit {
 

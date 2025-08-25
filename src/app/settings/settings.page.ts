@@ -1,6 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { AlertController, LoadingController, ToastController } from '@ionic/angular';
+import { CommonModule } from '@angular/common';
+import { IonicModule } from '@ionic/angular';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { AlertController, LoadingController, ToastController } from '@ionic/angular';
 import { AuthService } from '../auth/auth.service';
 import { AllService } from '../services/all.service';
 import { FcmService } from '../services/fcm.service';
@@ -10,6 +15,8 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
   selector: 'app-settings',
   templateUrl: './settings.page.html',
   styleUrls: ['./settings.page.scss'],
+  standalone: true,
+  imports: [CommonModule, IonicModule, FormsModule, ReactiveFormsModule, RouterModule]
 })
 export class SettingsPage implements OnInit {
 

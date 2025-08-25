@@ -8,7 +8,7 @@ import { environment } from '../../environments/environment';
 import { User } from './user.model';
 import { AllService } from '../services/all.service';
 import { Router } from '@angular/router';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, EmailAuthProvider, reauthenticateWithCredential, updatePassword, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
 export interface AuthResponseData {
@@ -82,36 +82,36 @@ export class AuthService implements OnDestroy {
               }
 
   autoLogin() {
-    return from(Plugins.Storage.get({ key: 'authData' })).pipe(
-      map(storedData => {
-        if (!storedData || !storedData.value) {
-          return null;
-        }
-        const parsedData = JSON.parse(storedData.value) as {
-          token: string;
-          tokenExpirationDate: string;
-          userId: string;
-          email: string;
-        };
-        const expirationTime = new Date(parsedData.tokenExpirationDate);
-        if (expirationTime <= new Date()) {
-          return null;
-        }
-        const user = new User(
-          parsedData.userId,
-          parsedData.email,
-          parsedData.token,
-          expirationTime
-        );
-        return user;
-      }),
-      tap(user => {
+    return from(this.checkAuthState()).pipe(
+      map(user => {
         if (user) {
           this._user.next(user);
-          this.autoLogout(user.tokenDuration);
+          return user;
         }
+        return null;
       })
     );
+  }
+
+  private async checkAuthState(): Promise<User | null> {
+    const auth = getAuth();
+    return new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        unsubscribe();
+        if (user) {
+          const token = await user.getIdToken();
+          const userObj = new User(
+            user.uid,
+            user.email || '',
+            token,
+            new Date(Date.now() + 3600000) // 1 hour from now
+          );
+          resolve(userObj);
+        } else {
+          resolve(null);
+        }
+      });
+    });
   }
 
   signup(email: string, password: string) {

@@ -1,26 +1,33 @@
 import { Component, OnInit } from '@angular/core';
-import { NewUser, Tasks, AllService } from '../services/all.service';
+import { CommonModule } from '@angular/common';
+import { IonicModule } from '@ionic/angular';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
+import { AlertController, LoadingController, ToastController } from '@ionic/angular';
+import { AllService } from '../services/all.service';
 import { ActivatedRoute } from '@angular/router';
-import { LoadingController } from '@ionic/angular';
 
 @Component({
   selector: 'app-history',
   templateUrl: './history.page.html',
   styleUrls: ['./history.page.scss'],
+  standalone: true,
+  imports: [CommonModule, IonicModule, FormsModule, RouterModule]
 })
 export class HistoryPage implements OnInit {
 
   xp: number;
   currLevel: number;
   nextLevel: number;
-  allUsers: NewUser[];
+  allUsers: any[];
   photoURL: string;
   borderURL: string;
-  currUser: Tasks[];
-  tasks: Tasks[] = [];
-  tasksTemp: Tasks[];
-  tasks2: Tasks[];
-  tasks3: Tasks[];
+  currUser: any[];
+  tasks: any[] = [];
+  tasksTemp: any[];
+  tasks2: any[];
+  tasks3: any[];
   prg = 0.0;
   prg2 = 0.0;
   startTimeTest: number;

@@ -1,11 +1,9 @@
-import { NgModule } from '@angular/core';
-import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
-
+import { Routes } from '@angular/router';
 import { DummyGuardService } from './guards/dummy-guard.service';
 import { DataResolverService } from './resolver/data-resolver.service';
 import { TutResolverService } from './resolver/tut-resolver.service';
 
-const routes: Routes = [
+export const routes: Routes = [
   // prev settings
   { path: '', redirectTo: 'auth', pathMatch: 'full' },
 
@@ -13,35 +11,35 @@ const routes: Routes = [
   // { path: '', redirectTo: 'beta', pathMatch: 'full' },
   { path: 'home',
     canLoad: [DummyGuardService],
-    loadChildren: () => import('./home/home.module').then( m => m.HomePageModule)
+    loadComponent: () => import('./home/home.page').then( m => m.HomePage)
   },
-  { path: 'auth', loadChildren: () => import('./auth/auth.module').then(m => m.AuthPageModule) },
+  { path: 'auth', loadComponent: () => import('./auth/auth.page').then(m => m.AuthPage) },
   {
     path: 'signin',
-    loadChildren: () => import('./auth/signin/signin.module').then( m => m.SigninPageModule)
+    loadComponent: () => import('./auth/signin/signin.page').then( m => m.SigninPage)
   },
   {
     path: 'signup',
-    loadChildren: () => import('./auth/signup/signup.module').then( m => m.SignupPageModule)
+    loadComponent: () => import('./auth/signup/signup.page').then( m => m.SignupPage)
   },
   {
     path: 'reset-password',
-    loadChildren: () => import('./auth/reset-password/reset-password.module').then( m => m.ResetPasswordPageModule)
+    loadComponent: () => import('./auth/reset-password/reset-password.page').then( m => m.ResetPasswordPage)
   },
   {
     path: 'friends',
     canLoad: [DummyGuardService],
-    loadChildren: () => import('./friends/friends.module').then( m => m.FriendsPageModule)
+    loadComponent: () => import('./friends/friends.page').then( m => m.FriendsPage)
   },
   {
     path: 'achievements',
     canLoad: [DummyGuardService],
-    loadChildren: () => import('./achievements/achievements.module').then( m => m.AchievementsPageModule)
+    loadComponent: () => import('./achievements/achievements.page').then( m => m.AchievementsPage)
   },
   {
     path: 'add-task',
     canLoad: [DummyGuardService],
-    loadChildren: () => import('./add-task/add-task.module').then( m => m.AddTaskPageModule)
+    loadComponent: () => import('./add-task/add-task.page').then( m => m.AddTaskPage)
   },
   {
     path: 'add-task/:id',
@@ -49,50 +47,49 @@ const routes: Routes = [
     resolve: {
       tutID: TutResolverService
     },
-    loadChildren: () => import('./add-task/add-task.module').then( m => m.AddTaskPageModule)
+    loadComponent: () => import('./add-task/add-task.page').then( m => m.AddTaskPage)
   },
   { path: 'home/:id',
     canLoad: [DummyGuardService],
     resolve: {
       tutID: TutResolverService
     },
-    loadChildren: () => import('./home/home.module').then( m => m.HomePageModule)
+    loadComponent: () => import('./home/home.page').then( m => m.HomePage)
   },
   {
     path: 'history',
     canLoad: [DummyGuardService],
-    loadChildren: () => import('./history/history.module').then( m => m.HistoryPageModule)
+    loadComponent: () => import('./history/history.page').then( m => m.HistoryPage)
   },
   {
     path: 'help',
     canLoad: [DummyGuardService],
-    loadChildren: () => import('./help/help.module').then( m => m.HelpPageModule)
+    loadComponent: () => import('./help/help.page').then( m => m.HelpPage)
   },
   {
     path: 'groups',
     canLoad: [DummyGuardService],
-    loadChildren: () => import('./groups/groups.module').then( m => m.GroupsPageModule)
+    loadComponent: () => import('./groups/groups.page').then( m => m.GroupsPage)
   },
   {
     path: 'settings',
     canLoad: [DummyGuardService],
-
-    loadChildren: () => import('./settings/settings.module').then( m => m.SettingsPageModule)
+    loadComponent: () => import('./settings/settings.page').then( m => m.SettingsPage)
   },
   {
     path: 'group-page',
     canLoad: [DummyGuardService],
-    loadChildren: () => import('./group-page/group-page.module').then( m => m.GroupPagePageModule)
+    loadComponent: () => import('./group-page/group-page.page').then( m => m.GroupPagePage)
   },
   {
     path: 'tutorial',
     canLoad: [DummyGuardService],
-    loadChildren: () => import('./tutorial/tutorial.module').then( m => m.TutorialPageModule)
+    loadComponent: () => import('./tutorial/tutorial.page').then( m => m.TutorialPage)
   },
   {
     path: 'friend-profile',
     canLoad: [DummyGuardService],
-    loadChildren: () => import('./friend-profile/friend-profile.module').then( m => m.FriendProfilePageModule)
+    loadComponent: () => import('./friend-profile/friend-profile.page').then( m => m.FriendProfilePage)
   },
   {
     path: 'friend-profile/:email',
@@ -100,27 +97,19 @@ const routes: Routes = [
     resolve: {
       friendEmail: DataResolverService
     },
-    loadChildren: () => import('./friend-profile/friend-profile.module').then( m => m.FriendProfilePageModule)
+    loadComponent: () => import('./friend-profile/friend-profile.page').then( m => m.FriendProfilePage)
   },
   {
     path: 'notifications',
     canLoad: [DummyGuardService],
-    loadChildren: () => import('./notifications/notifications.module').then( m => m.NotificationsPageModule)
+    loadComponent: () => import('./notifications/notifications.page').then( m => m.NotificationsPage)
   },
   {
     path: 'consecutive-login',
-    loadChildren: () => import('./consecutive-login/consecutive-login.module').then( m => m.ConsecutiveLoginPageModule)
+    loadComponent: () => import('./consecutive-login/consecutive-login.page').then( m => m.ConsecutiveLoginPage)
   },
   {
     path: 'beta',
-    loadChildren: () => import('./landing/landing.module').then( m => m.LandingPageModule)
+    loadComponent: () => import('./landing/landing.page').then( m => m.LandingPage)
   },
 ];
-
-@NgModule({
-  imports: [
-    RouterModule.forRoot(routes, { preloadingStrategy: PreloadAllModules })
-  ],
-  exports: [RouterModule]
-})
-export class AppRoutingModule { }

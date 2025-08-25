@@ -48,7 +48,7 @@
  *  in IE/Edge developer tools, the addEventListener will also be wrapped by zone.js
  *  with the following flag, it will bypass `zone.js` patch for IE/Edge
  *
- *  (window as any).__Zone_enable_cross_context_check = true;
+ * (window as any).__Zone_enable_cross_context_check = true;
  *
  */
 
@@ -58,7 +58,7 @@ import './zone-flags';
  * Zone JS is required by default for Angular itself.
  */
 
-import 'zone.js/dist/zone';  // Included with Angular CLI.
+import 'zone.js';  // Included with Angular CLI.
 
 
 /***************************************************************************************************

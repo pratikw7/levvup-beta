@@ -1,5 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { IonicModule } from '@ionic/angular';
 
 import { Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
@@ -8,20 +10,17 @@ import { take } from 'rxjs/operators';
 import { AuthService } from './auth/auth.service';
 import { AllService } from './services/all.service';
 
-import {
-  Plugins,
-  Capacitor,
-  AppState,
-  PushNotification,
-  PushNotificationToken,
-  PushNotificationActionPerformed
-} from '@capacitor/core';
-
-const { PushNotifications, Modals } = Plugins;
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { App } from '@capacitor/app';
+import { SplashScreen } from '@capacitor/splash-screen';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 @Component({
   selector: 'app-root',
-  templateUrl: 'app.component.html'
+  templateUrl: 'app.component.html',
+  standalone: true,
+  imports: [CommonModule, IonicModule]
 })
 export class AppComponent implements OnInit, OnDestroy {
   private authSub: Subscription;
@@ -38,7 +37,7 @@ export class AppComponent implements OnInit, OnDestroy {
   initializeApp() {
     this.platform.ready().then(() => {
       if (Capacitor.isPluginAvailable('SplashScreen')) {
-        Plugins.SplashScreen.hide();
+        SplashScreen.hide();
       }
     });
   }
@@ -50,19 +49,20 @@ export class AppComponent implements OnInit, OnDestroy {
       }
       this.previousAuthState = isAuth;
     });
-    Plugins.App.addListener(
+    
+    App.addListener(
       'appStateChange',
       this.checkAuthOnResume.bind(this)
     );
-////////////////
+
     console.log('Initializing HomePage');
 
     // Register with Apple / Google to receive push via APNS/FCM
     PushNotifications.register();
 
-    // On succcess, we should be able to receive notifications
+    // On success, we should be able to receive notifications
     PushNotifications.addListener('registration',
-      (token: PushNotificationToken) => {
+      (token: any) => {
         alert('Push registration success, token: ' + token.value);
         console.log('Push registration success, token: ' + token.value);
       }
@@ -77,29 +77,21 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // Show us the notification payload if the app is open on our device
     PushNotifications.addListener('pushNotificationReceived',
-      (notification: PushNotification) => {
-        // var audio1 = new Audio('assets/audio.mp3');
-        // console.log('Audio');
-        // audio1.play();
-        // alert('Push received: ' + JSON.stringify(notification));
+      (notification: any) => {
         console.log('Push received: ', notification);
 
-        let alertRet = Modals.alert({
-          title: notification.title,
-          message: notification.body
-        });
-
+        // Use Haptics for notification feedback
+        Haptics.impact({ style: ImpactStyle.Medium });
       }
     );
 
     // Method called when tapping on a notification
     PushNotifications.addListener('pushNotificationActionPerformed',
-      (notification: PushNotificationActionPerformed) => {
+      (notification: any) => {
         alert('Push action performed: ' + JSON.stringify(notification));
-        console.log('Push action performed: ' + notification);
+        console.log('Push action performed: ', notification);
       }
     );
-    ///////////////////////
   }
 
 
@@ -115,7 +107,7 @@ export class AppComponent implements OnInit, OnDestroy {
     // Plugins.App.removeListener('appStateChange', this.checkAuthOnResume);
   }
 
-  private checkAuthOnResume(state: AppState) {
+  private checkAuthOnResume(state: any) {
     if (state.isActive) {
       this.authService
         .autoLogin()

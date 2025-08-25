@@ -1,17 +1,24 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { AllService, Tasks } from '../services/all.service';
+import { CommonModule } from '@angular/common';
+import { IonicModule } from '@ionic/angular';
+import { FormsModule } from '@angular/forms';
+import { RouterModule, ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
+import { AlertController, LoadingController, ToastController } from '@ionic/angular';
+import { AllService } from '../services/all.service';
 
 @Component({
   selector: 'app-friend-profile',
   templateUrl: './friend-profile.page.html',
   styleUrls: ['./friend-profile.page.scss'],
+  standalone: true,
+  imports: [CommonModule, IonicModule, FormsModule, RouterModule]
 })
 export class FriendProfilePage implements OnInit {
 
   friendEmail: string;
-  tasks: Tasks[] = [];
-  tasksTemp: Tasks[] = [];
+  tasks: any[] = [];
+  tasksTemp: any[] = [];
   photoURL: string;
   borderURL: string;
   currLevel: number;
